@@ -14,3 +14,4 @@ Known issues/TODOs:
 * Not all installed packages have been stress tested as of yet
 * Intel MKL/IPP libraries fail to be detected at compile time, removed for the time being and isolated to the "Dockerfile_MKLWIP" file. Could allow for a significant speed up, and for increase python performance (intelpython).
 * mark5access, PsrXML and a few other packages were intended to be installed but appear to have issues compiling, leaving out for now.
+* PSRCHIVE seems to have some GPU support but it depends on [CULA](http://www.culatools.com/), which at the time of writing seems to be unobtainable as it's behind a registration/licencse wall which is broken.
