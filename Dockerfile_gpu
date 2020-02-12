@@ -238,4 +238,4 @@ RUN make
 
 
 WORKDIR /home/user
-ENTRYPOINT /bin/dash
+ENTRYPOINT /bin/bash

@@ -193,4 +193,4 @@ RUN python3 tests/test_presto_python.py; exit 0
 
 
 WORKDIR /home/user
-ENTRYPOINT /bin/dash
+ENTRYPOINT /bin/bash
