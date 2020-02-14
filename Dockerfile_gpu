@@ -2,9 +2,9 @@ FROM nvidia/cuda:10.2-cudnn7-devel
 SHELL ["/bin/dash", "-c"]
 
 # Install all required packages available from the disto package manager
-RUN apt-get update \
-&&  apt-get install -y software-properties-common apt-utils wget \
-&&  add-apt-repository -y multiverse
+RUN apt-get update && \
+	apt-get install -y software-properties-common apt-utils wget && \
+	add-apt-repository -y multiverse
 
 # Handle tzdata dependency asking for input on server location
 ARG DEBIAN_FRONTEND=noninteractive
@@ -19,14 +19,14 @@ RUN python -m pip install --upgrade pip numpy setuptools sphinx==1.7.9 wheel && 
 WORKDIR /home/soft
 
 # Get PSRCAT
-RUN wget http://www.atnf.csiro.au/people/pulsar/psrcat/downloads/psrcat_pkg.tar.gz \
-&&  tar -zxvf ./psrcat_pkg.tar.gz \
-&&  rm ./psrcat_pkg.tar.gz
+RUN wget http://www.atnf.csiro.au/people/pulsar/psrcat/downloads/psrcat_pkg.tar.gz && \
+	tar -zxvf ./psrcat_pkg.tar.gz && \
+	rm ./psrcat_pkg.tar.gz
 
 # Get Calceph
-RUN wget --no-check-certificate https://www.imcce.fr/content/medias/recherche/equipes/asd/calceph/calceph-3.0.0.tar.gz \\
-&&  tar -zxvf ./calceph-3.0.0.tar.gz 
-&&  rm ./calceph-3.0.0.tar.gz
+RUN wget --no-check-certificate https://www.imcce.fr/content/medias/recherche/equipes/asd/calceph/calceph-3.0.0.tar.gz && \
+	tar -zxvf ./calceph-3.0.0.tar.gz && \ 
+	rm ./calceph-3.0.0.tar.gz
 
 # Get Git repos
 RUN git clone https://git.code.sf.net/p/psrchive/code psrchive
@@ -94,11 +94,11 @@ RUN updatedb;ldconfig
 
 # Build psrfits_utils
 WORKDIR $SOFT/psrfits_utils
-RUN sed -i 's/-Werror//' ./configure.ac \
-&&  ./prepare \
-&&  ./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu \
-&&  make \
-&&  make install 
+RUN sed -i 's/-Werror//' ./configure.ac && \
+	./prepare && \
+	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
+	make && \
+	make install 
 
 # Build PSRCAT
 WORKDIR $SOFT/psrcat_tar
@@ -112,39 +112,39 @@ RUN make install
 # Build outdated version of SWIG
 WORKDIR $SOFT/swig
 # We require an older version of swig for the system to compile properly
-RUN git reset --hard 1c42135 \
-&&  bash ./autogen.sh \
-&&  ./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu \
-&&  make -j $BUILD_CORES \
-&&  make install \
-&&  updatedb; ldconfig
+RUN git reset --hard 1c42135 && \
+	bash ./autogen.sh && \
+	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
+	make -j $BUILD_CORES && \
+	make install && \
+	updatedb; ldconfig
 
 # Build Calceph
 WORKDIR $SOFT/calceph-3.0.0
-RUN ./configure --with-pic --enable-shared --enable-static --enable-thread --enable-fortran  \
-&&  make -j $BUILD_CORES \
-&&  make install \
-&&  updatedb; ldconfig
+RUN ./configure --with-pic --enable-shared --enable-static --enable-thread --enable-fortran  && \
+	make -j $BUILD_CORES && \
+	make install && \
+	updatedb; ldconfig
 
 
 # Build TEMPO
 WORKDIR $SOFT/tempo
-RUN echo " 3801692.284   -528984.335      5076957.630    1  ILOFAR              n  IL" >> obsys.dat \
-&&  ./prepare \
-&&  ./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu \
-&&  make -j $BUILD_CORES \
-&&  make install \
-&&  updatedb; ldconfig
+RUN echo " 3801692.284   -528984.335      5076957.630    1  ILOFAR              n  IL" >> obsys.dat && \
+	./prepare && \
+	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
+	make -j $BUILD_CORES && \
+	make install && \
+	updatedb; ldconfig
 
 # Build TEMPO2
 WORKDIR $SOFT/tempo2
-RUN echo "IElfr n" >> ./T2runtime/observatory/aliases \
-&&  printf "# IE613 LOFAR Station\n 3801633.868    -529022.268     5076996.892      IE613LBA            Ielfrlba\n 3801633.868    -529022.268     5076996.892      IE613LBH            Ielfrlbh\n 3801692.284    -528984.335     5076957.630      IE613HBA            Ielfrhba\n 3801692.284    -528984.335     5076957.630      IE613               Ielfr" >> ./T2runtime/observatory/observatories.dat \
-&&  ./bootstrap \
-&&  ./configure --with-calceph=/home/soft/calceph-3.0.0 --x-libraries=/usr/lib/x86_64-linux-gnu --prefix=/usr/local \
-&&  make -j $BUILD_CORES; make plugins -j $BUILD_CORES \
-&&  make install; make plugins-install \
-&&  updatedb; ldconfig
+RUN echo "IElfr n" >> ./T2runtime/observatory/aliases && \
+	printf "# IE613 LOFAR Station\n 3801633.868    -529022.268     5076996.892      IE613LBA            Ielfrlba\n 3801633.868    -529022.268     5076996.892      IE613LBH            Ielfrlbh\n 3801692.284    -528984.335     5076957.630      IE613HBA            Ielfrhba\n 3801692.284    -528984.335     5076957.630      IE613               Ielfr" >> ./T2runtime/observatory/observatories.dat && \
+	./bootstrap && \
+	./configure --with-calceph=/home/soft/calceph-3.0.0 --x-libraries=/usr/lib/x86_64-linux-gnu --prefix=/usr/local && \
+	make -j $BUILD_CORES; make plugins -j $BUILD_CORES && \
+	make install; make plugins-install && \
+	updatedb; ldconfig
 
 # Build PSRDADA
 WORKDIR $SOFT/psrdada
@@ -157,9 +157,9 @@ ENV FLAGS ""
 
 # Build the LOFAR DAL backend
 WORKDIR $SOFT/DAL/build
-RUN cmake .. \
-&&  make \
-&&  make install
+RUN cmake .. && \
+	make && \
+	make install
 
 # PSRCHIVE hates the debian name style for hdf5
 WORKDIR /usr/lib/x86_64-linux-gnu
@@ -167,13 +167,13 @@ RUN ln -s libhdf5_serial.so libhdf5.so && ln -s libhdf5_serial_hl.so libhdf5_hl.
 
 # Build PSRCHIVE
 WORKDIR $SOFT/psrchive
-RUN ./bootstrap \
-&&  ./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu; exit 0
-RUN ./packages/epsic.csh \
-&&  ./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu  \
-&&  make -j $BUILD_CORES \
-&&  make install \
-&&  updatedb; ldconfig
+RUN ./bootstrap && \
+	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu; exit 0
+RUN ./packages/epsic.csh && \
+	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu  && \
+	make -j $BUILD_CORES && \
+	make install && \
+	updatedb; ldconfig
 
 # Analyse FFT libraries for PSRCHIVE/DSPSR accelleration (will take a while, or jsut take the git repo version.)
 WORKDIR $SOFT/psrchive/Util/fft
@@ -181,10 +181,10 @@ WORKDIR $SOFT/psrchive/Util/fft
 RUN sed -i 's/#!\/bin\/sh/#!\/bin\/bash/' ./fft_bench && make bench
 
 # Setup PSRCHIVE config
-RUN psrchive_config > ~/.psrchive.cfg \
-&&  sed -i "s/# Predictor::default = polyco/Predictor::default = tempo2/" ~/.psrchive.cfg \
-&&  sed -i "s/# Predictor::policy = ephem/Predictor::policy = default/" ~/.psrchive.cfg \
-&&  sed -i "s/# WeightedFrequency::round_to_kHz = 1/WeightedFrequency::round_to_kHz = 0/" ~/.psrchive.cfg
+RUN psrchive_config > ~/.psrchive.cfg && \
+	sed -i "s/# Predictor::default = polyco/Predictor::default = tempo2/" ~/.psrchive.cfg && \
+	sed -i "s/# Predictor::policy = ephem/Predictor::policy = default/" ~/.psrchive.cfg && \
+	sed -i "s/# WeightedFrequency::round_to_kHz = 1/WeightedFrequency::round_to_kHz = 0/" ~/.psrchive.cfg
 
 
 # Build Dedisp
@@ -197,12 +197,12 @@ RUN make install
 # Build DSPSR
 WORKDIR $SOFT/dspsr
 #RUN echo "fits lump sigproc dummy dada lofar_dal puma puma2 spigot wapp mwa ska1" > backends.list
-RUN echo "fits lump sigproc dummy dada lofar_dal mwa ska1" > backends.list \
-&&  ./bootstrap \
-&&  ./configure \
-&&  make -j $BUILD_CORES \
-&&  make install \
-&&  updatedb; ldconfig
+RUN echo "fits lump sigproc dummy dada lofar_dal mwa ska1" > backends.list && \
+	./bootstrap && \
+	./configure && \
+	make -j $BUILD_CORES && \
+	make install && \
+	updatedb; ldconfig
 
 
 # Build Heimdall
@@ -214,11 +214,11 @@ RUN make install
 
 # Build SIGPROC
 WORKDIR $SOFT/sigproc
-RUN ./bootstrap \
-&&  ./configure \
-&&  make -j $BUILD_CORES \
-&&  make install \
-&&  updatedb; ldconfig
+RUN ./bootstrap && \
+	./configure && \
+	make -j $BUILD_CORES && \
+	make install && \
+	updatedb; ldconfig
 
 # Build PRESTO
 # PRESTO wisdom seems to just be the fftwf wisdom, so copy it instead
