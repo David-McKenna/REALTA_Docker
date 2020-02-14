@@ -29,23 +29,23 @@ RUN wget --no-check-certificate https://www.imcce.fr/content/medias/recherche/eq
 	rm ./calceph-3.0.0.tar.gz
 
 # Get Git repos
-RUN git clone https://git.code.sf.net/p/psrchive/code psrchive
-RUN git clone https://git.code.sf.net/p/psrdada/code psrdada
-RUN git clone https://git.code.sf.net/p/tempo/tempo
-RUN git clone https://git.code.sf.net/p/dspsr/code dspsr
-RUN git clone https://git.code.sf.net/p/heimdall-astro/code heimdall
-RUN git clone https://bitbucket.org/psrsoft/tempo2.git
-RUN git clone https://github.com/ajameson/dedisp.git
-RUN git clone https://github.com/David-McKenna/sigproc
-RUN git clone https://github.com/scottransom/presto.git
-RUN git clone https://github.com/swig/swig.git
-RUN git clone https://github.com/nextgen-astrodata/DAL.git DAL
-RUN git clone https://github.com/cbassa/cdmt.git
-RUN git clone https://github.com/NVlabs/cub.git
-RUN git clone https://github.com/demorest/psrfits_utils.git
-RUN git clone https://github.com/GPU-correlators/xGPU.git xgpu
-RUN git clone https://github.com/NVIDIA/cuda-samples.git
-RUN git clone https://github.com/evanocathain/mockHeader.git mockheader
+RUN git clone https://git.code.sf.net/p/psrchive/code psrchive && \
+	git clone https://git.code.sf.net/p/psrdada/code psrdada && \
+	git clone https://git.code.sf.net/p/tempo/tempo && \
+	git clone https://git.code.sf.net/p/dspsr/code dspsr && \
+	git clone https://git.code.sf.net/p/heimdall-astro/code heimdall && \
+	git clone https://bitbucket.org/psrsoft/tempo2.git && \
+	git clone https://github.com/ajameson/dedisp.git && \
+	git clone https://github.com/David-McKenna/sigproc && \
+	git clone https://github.com/scottransom/presto.git && \
+	git clone https://github.com/swig/swig.git && \
+	git clone https://github.com/nextgen-astrodata/DAL.git DAL && \
+	git clone https://github.com/cbassa/cdmt.git && \
+	git clone https://github.com/NVlabs/cub.git && \
+	git clone https://github.com/demorest/psrfits_utils.git && \
+	git clone https://github.com/GPU-correlators/xGPU.git xgpu && \
+	git clone https://github.com/NVIDIA/cuda-samples.git && \
+	git clone https://github.com/evanocathain/mockHeader.git mockheader
 #RUN git clone https://github.com/SixByNine/psrxml.git
 # Get subversion repo
 #RUN svn checkout https://svn.atnf.csiro.au/difx/libraries/mark5access/trunk/ mark5access
@@ -89,8 +89,7 @@ WORKDIR /etc/fftw
 
 # Move CUB into the inclides folder
 WORKDIR $SOFT/cub
-RUN cp -r ./cub /usr/local/include/
-RUN updatedb;ldconfig
+RUN cp -r ./cub /usr/local/include/ && updatedb;ldconfig
 
 # Build psrfits_utils
 WORKDIR $SOFT/psrfits_utils
@@ -149,10 +148,10 @@ RUN echo "IElfr n" >> ./T2runtime/observatory/aliases && \
 # Build PSRDADA
 WORKDIR $SOFT/psrdada
 ENV FLAGS "-lstdc++"
-RUN ./bootstrap
-RUN ./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu
-RUN make -j $BUILD_CORES
-RUN make install
+RUN ./bootstrap && \
+	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
+	make -j $BUILD_CORES && \
+	make install
 ENV FLAGS ""
 
 # Build the LOFAR DAL backend
@@ -189,10 +188,10 @@ RUN psrchive_config > ~/.psrchive.cfg && \
 
 # Build Dedisp
 WORKDIR $SOFT/dedisp
-RUN sed -i 's/sm_30/sm_70/' ./Makefile.inc
-RUN sed -i 's/$(HOME)\/linux_64/\/usr\/local/' ./Makefile.inc
-RUN make -j 48
-RUN make install
+RUN sed -i 's/sm_30/sm_70/' ./Makefile.inc && \
+	sed -i 's/$(HOME)\/linux_64/\/usr\/local/' ./Makefile.inc && \
+	make -j 48 && \
+	make install
 
 # Build DSPSR
 WORKDIR $SOFT/dspsr
@@ -207,10 +206,10 @@ RUN echo "fits lump sigproc dummy dada lofar_dal mwa ska1" > backends.list && \
 
 # Build Heimdall
 WORKDIR $SOFT/heimdall
-RUN ./bootstrap
-RUN ./configure
-RUN make -j 48
-RUN make install
+RUN ./bootstrap && \
+	./configure && \
+	make -j 48 && \
+	make install
 
 # Build SIGPROC
 WORKDIR $SOFT/sigproc
@@ -243,10 +242,10 @@ RUN python3 tests/test_presto_python.py; exit 0
 
 # Test out CDMT at some point
 WORKDIR $SOFT/cdmt
-RUN sed -i 's/\/opt\/cuda/\/usr\/local\/cuda/' ./makefile
-RUN sed -i 's/$(CUDAPATH)\/samples\/common\/inc/$(SOFT)\/cuda-samples\/Common/' ./makefile
-RUN make
-RUN cp ./cdmt /usr/local/bin/
+RUN sed -i 's/\/opt\/cuda/\/usr\/local\/cuda/' ./makefile && \
+	sed -i 's/$(CUDAPATH)\/samples\/common\/inc/$(SOFT)\/cuda-samples\/Common/' ./makefile && \
+	make && \
+	cp ./cdmt /usr/local/bin/
 
 # Build and install mockHeader
 WORKDIR $SOFT/mockheader
