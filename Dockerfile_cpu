@@ -3,7 +3,7 @@ SHELL ["/bin/bash", "-c"]
 
 # Install all required packages available from the disto package manager
 RUN apt-get update  && \
-    apt-get install -y software-properties-common apt-utils wget && && \
+    apt-get install -y software-properties-common apt-utils wget && \
 	add-apt-repository -y multiverse
 
 # Handle tzdata dependency asking for input on server location
