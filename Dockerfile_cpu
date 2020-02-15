@@ -24,7 +24,7 @@ RUN wget http://www.atnf.csiro.au/people/pulsar/psrcat/downloads/psrcat_pkg.tar.
 	rm ./psrcat_pkg.tar.gz
 
 # Get Calceph
-RUN wget --no-check-certificate https://www.imcce.fr/content/medias/recherche/equipes/asd/calceph/calceph-3.0.0.tar.gz \&& \
+RUN wget --no-check-certificate https://www.imcce.fr/content/medias/recherche/equipes/asd/calceph/calceph-3.0.0.tar.gz && \
 	tar -zxvf ./calceph-3.0.0.tar.gz && \ 
 	rm ./calceph-3.0.0.tar.gz
 
