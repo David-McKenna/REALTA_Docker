@@ -1,5 +1,5 @@
-NPROC = $(nproc)
-BUILD_CORES = $(echo $NPROC 0.75 | awk '{printf "%1.0f",$1*$2}')
+NPROC = $(shell nproc)
+BUILD_CORES = $(shell echo $(NPROC) '0.75' | awk '{printf "%1.0f", $$1*$$2}')
 
 all: gpu cpu
 
