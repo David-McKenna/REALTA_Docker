@@ -103,7 +103,7 @@ RUN ./configure --with-pic --enable-shared --enable-static --enable-thread --ena
 
 # Build TEMPO
 WORKDIR $SOFT/tempo
-RUN echo " 3801692.284   -528984.335      5076957.630    1  I-LOFAR              n  IL" >> obsys.dat && \
+RUN echo " 3801692.284   -528984.335      5076957.630    1  ILOFAR              n  IL" >> obsys.dat && \
 	./prepare && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
 	make -j $BUILD_CORES && \

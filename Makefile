@@ -5,6 +5,8 @@ all: gpu cpu
 
 
 gpu:
+	echo $(NPROC) $(BUILD_CORES)
+	sleep 5
 	docker build --build-arg BUILD_CORES="$(BUILD_CORES)" -t pulsar-gpu-dsp2020 -f Dockerfile_gpu .
 
 cpu:

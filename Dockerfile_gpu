@@ -71,6 +71,12 @@ ENV PAKCAGES "/usr/local/cuda"
 RUN updatedb; ldconfig
 
 
+# Revert to known good commit hashes
+WORKDIR $SOFT
+RUN wget https://gist.githubusercontent.com/David-McKenna/334bf337ebf3973fba50a8478e3f2fa7/raw/c5856c3608ad667daf08aa208e744a0ec9e0ff34/realta_docker_lock_git_commits.sh; \
+	bash ./realta_docker_lock_git_commits.sh
+
+
 # Clone the REALTA fftw wisdom files as a base (you may want to recompile these for other machines, but l/q will take multiple days to finish.)
 # These took ~ 3 days to finish compiling on the REALTA-UCC2 node.
 WORKDIR /etc
@@ -125,7 +131,7 @@ RUN ./configure --with-pic --enable-shared --enable-static --enable-thread --ena
 
 # Build TEMPO
 WORKDIR $SOFT/tempo
-RUN echo " 3801692.284   -528984.335      5076957.630    1  I-LOFAR              n  IL" >> obsys.dat && \
+RUN echo " 3801692.284   -528984.335      5076957.630    1  ILOFAR              n  IL" >> obsys.dat && \
 	./prepare && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
 	make -j $BUILD_CORES && \
@@ -166,9 +172,6 @@ RUN git reset --hard 68eb0427d592883a73448d5654be4af1c22b576c && \
 # Build PSRCHIVE -- same story, revert....
 WORKDIR $SOFT/psrchive
 RUN ./bootstrap && \
-	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu; exit 0
-RUN sed -i "s/git pull/ git pull; git reset --hard e9a2ac1085756e037b4870f7160c183e045523e5/" ./packages/epsic.csh
-RUN ./packages/epsic.csh && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu  && \
 	make -j $BUILD_CORES && \
 	make install && \
@@ -224,7 +227,7 @@ RUN ./bootstrap && \
 RUN cp /etc/fftw/wisdomf $SOFT/presto/lib/fftw_wisdom.txt
 
 WORKDIR $SOFT/presto/src
-RUN wget https://gist.githubusercontent.com/David-McKenna/74958f86a0d23b2322a1c037ef972dc7/raw/bf0d0315ecdcf05cbf3e43e9a4fd30e80a77c5ca/01-ilofar-presto.patch; git appply 01-ilofar-presto.patch; make -j $BUILD_CORES
+RUN wget https://gist.githubusercontent.com/David-McKenna/74958f86a0d23b2322a1c037ef972dc7/raw/618525f55adefe2e57d3830e5e13a2c7d8172a47/0001-Add-I_LOFAR.patch; git apply 0001-Add-I_LOFAR.patch; make -j $BUILD_CORES
 
 # Generate the wisdom files if needed; will take a few hours. 
 #RUN make makewisdom
