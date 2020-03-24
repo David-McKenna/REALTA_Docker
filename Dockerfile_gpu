@@ -17,7 +17,7 @@ RUN python -m pip install --upgrade pip numpy setuptools sphinx==1.7.9 wheel && 
 
 
 WORKDIR /home/soft
-
+RUN echo "Reinit"
 # Get PSRCAT
 RUN wget http://www.atnf.csiro.au/people/pulsar/psrcat/downloads/psrcat_pkg.tar.gz && \
 	tar -zxvf ./psrcat_pkg.tar.gz && \
@@ -168,6 +168,7 @@ RUN ln -s libhdf5_serial.so libhdf5.so && ln -s libhdf5_serial_hl.so libhdf5_hl.
 WORKDIR $SOFT/psrchive
 RUN ./bootstrap && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu; exit 0
+RUN sed -i "s/git pull/ git pull; git reset --hard e9a2ac1085756e037b4870f7160c183e045523e5/" ./packages/epsic.csh
 RUN ./packages/epsic.csh && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu  && \
 	make -j $BUILD_CORES && \
@@ -177,7 +178,7 @@ RUN ./packages/epsic.csh && \
 # Analyse FFT libraries for PSRCHIVE/DSPSR accelleration (will take a while, or jsut take the git repo version.)
 WORKDIR $SOFT/psrchive/Util/fft
 # Workaround sh not containing 'time' anymore
-RUN sed -i 's/#!\/bin\/sh/#!\/bin\/bash/' ./fft_bench && make bench
+#RUN sed -i 's/#!\/bin\/sh/#!\/bin\/bash/' ./fft_bench && make bench
 
 # Setup PSRCHIVE config
 RUN psrchive_config > ~/.psrchive.cfg && \
