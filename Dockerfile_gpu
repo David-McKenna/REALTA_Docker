@@ -192,8 +192,8 @@ RUN sed -i 's/sm_30/sm_70/' ./Makefile.inc && \
 
 # Build DSPSR
 WORKDIR $SOFT/dspsr
-#RUN echo "fits lump sigproc dummy dada lofar_dal puma puma2 spigot wapp mwa ska1" > backends.list
-RUN echo "fits lump sigproc dummy dada lofar_dal mwa ska1" > backends.list && \
+#RUN echo "fits lump sigproc dummy dada puma puma2 spigot wapp mwa ska1" > backends.list
+RUN echo "fits lump sigproc dummy dada mwa ska1" > backends.list && \
 	./bootstrap && \
 	./configure && \
 	make -j $BUILD_CORES && \
