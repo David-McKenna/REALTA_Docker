@@ -18,13 +18,11 @@ RUN python -m pip install --upgrade pip numpy setuptools sphinx==1.7.9 wheel && 
 
 WORKDIR /home/soft
 
-# Get PSRCAT
+# Get PSRCAT, Calceph
 RUN wget http://www.atnf.csiro.au/people/pulsar/psrcat/downloads/psrcat_pkg.tar.gz && \
 	tar -zxvf ./psrcat_pkg.tar.gz && \
-	rm ./psrcat_pkg.tar.gz
-
-# Get Calceph
-RUN wget --no-check-certificate https://www.imcce.fr/content/medias/recherche/equipes/asd/calceph/calceph-3.0.0.tar.gz && \
+	rm ./psrcat_pkg.tar.gz && \
+	wget --no-check-certificate https://www.imcce.fr/content/medias/recherche/equipes/asd/calceph/calceph-3.0.0.tar.gz && \
 	tar -zxvf ./calceph-3.0.0.tar.gz && \ 
 	rm ./calceph-3.0.0.tar.gz
 
@@ -45,7 +43,7 @@ RUN git clone https://git.code.sf.net/p/psrchive/code psrchive && \
 	git clone https://github.com/demorest/psrfits_utils.git && \
 	git clone https://github.com/GPU-correlators/xGPU.git xgpu && \
 	git clone https://github.com/NVIDIA/cuda-samples.git && \
-	git clone https://github.com/evanocathain/mockHeader.git mockheader
+	git clone https://github.com/David-McKenna/udp2Filterbank
 #RUN git clone https://github.com/SixByNine/psrxml.git
 # Get subversion repo
 #RUN svn checkout https://svn.atnf.csiro.au/difx/libraries/mark5access/trunk/ mark5access
@@ -128,7 +126,7 @@ RUN ./configure --with-pic --enable-shared --enable-static --enable-thread --ena
 
 # Build TEMPO
 WORKDIR $SOFT/tempo
-RUN echo " 3801692.284   -528984.335      5076957.630    1  ILOFAR              n  IL" >> obsys.dat && \
+RUN echo " 3801692.284   -528984.335      5076957.630    1  I-LOFAR              n  IL" >> obsys.dat && \
 	./prepare && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
 	make -j $BUILD_CORES && \
@@ -224,7 +222,8 @@ RUN ./bootstrap && \
 RUN cp /etc/fftw/wisdomf $SOFT/presto/lib/fftw_wisdom.txt
 
 WORKDIR $SOFT/presto/src
-RUN make -j $BUILD_CORES
+RUN wget https://gist.githubusercontent.com/David-McKenna/74958f86a0d23b2322a1c037ef972dc7/raw/bf0d0315ecdcf05cbf3e43e9a4fd30e80a77c5ca/01-ilofar-presto.patch; git appply 01-ilofar-presto.patch; make -j $BUILD_CORES
+
 # Generate the wisdom files if needed; will take a few hours. 
 #RUN make makewisdom
 
@@ -236,9 +235,8 @@ RUN make -j $BUILD_CORES
 
 # Install PRESTO python libraries
 WORKDIR $SOFT/presto
-RUN python -m pip install . && pip3 install .
-RUN python tests/test_presto_python.py; exit 0
-RUN python3 tests/test_presto_python.py; exit 0
+RUN python -m pip install . && pip3 install .;
+RUN python tests/test_presto_python.py; python3 tests/test_presto_python.py; exit 0
 
 # Test out CDMT at some point
 WORKDIR $SOFT/cdmt
@@ -247,9 +245,9 @@ RUN sed -i 's/\/opt\/cuda/\/usr\/local\/cuda/' ./makefile && \
 	make && \
 	cp ./cdmt /usr/local/bin/
 
-# Build and install mockHeader
-WORKDIR $SOFT/mockheader
-RUN make && cp ./mockHeader /usr/local/bin/
+# Build and install udp2Filterbank/mockHeader
+WORKDIR $SOFT/udp2Filterbank
+RUN make
 
 WORKDIR /home/user
 ENTRYPOINT /bin/bash
