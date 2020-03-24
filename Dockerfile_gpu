@@ -166,7 +166,7 @@ RUN git reset --hard 68eb0427d592883a73448d5654be4af1c22b576c && \
 
 # Build PSRCHIVE -- same story, revert....
 WORKDIR $SOFT/psrchive
-RUN git reset --hard 7b9924 && \
+RUN git reset --hard 9ca79f8f9381f3c26eaafd6b79a10416a2323f92 && \
 	./bootstrap && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu  && \
 	make -j $BUILD_CORES && \
