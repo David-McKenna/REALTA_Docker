@@ -166,8 +166,6 @@ RUN git reset --hard 68eb0427d592883a73448d5654be4af1c22b576c && \
 # Build PSRCHIVE
 WORKDIR $SOFT/psrchive
 RUN ./bootstrap && \
-	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu; exit 0
-RUN ./packages/epsic.csh && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu  && \
 	make -j $BUILD_CORES && \
 	make install && \

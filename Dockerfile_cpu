@@ -126,7 +126,7 @@ RUN ./bootstrap && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
 	make -j $BUILD_CORES && \
 	make install
-	
+
 
 # PSRCHIVE hates the debian name style for hdf5
 WORKDIR /usr/lib/x86_64-linux-gnu
@@ -135,8 +135,6 @@ RUN ln -s libhdf5_serial.so libhdf5.so && ln -s libhdf5_serial_hl.so libhdf5_hl.
 # Build PSRCHIVE
 WORKDIR $SOFT/psrchive
 RUN ./bootstrap && \
-	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu; exit 0
-RUN ./packages/epsic.csh && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu  && \
 	make -j $BUILD_CORES && \
 	make install && \
