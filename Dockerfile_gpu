@@ -73,7 +73,7 @@ RUN updatedb; ldconfig
 
 # Revert to known good commit hashes
 WORKDIR $SOFT
-RUN wget https://gist.githubusercontent.com/David-McKenna/334bf337ebf3973fba50a8478e3f2fa7/raw/c5856c3608ad667daf08aa208e744a0ec9e0ff34/realta_docker_lock_git_commits.sh; \
+RUN wget https://gist.githubusercontent.com/David-McKenna/334bf337ebf3973fba50a8478e3f2fa7/raw/d7f8719763ccd9eebaadc7548b256c96d8229b73/realta_docker_lock_git_commits.sh; \
 	bash ./realta_docker_lock_git_commits.sh
 
 
@@ -227,7 +227,7 @@ RUN ./bootstrap && \
 RUN cp /etc/fftw/wisdomf $SOFT/presto/lib/fftw_wisdom.txt
 
 WORKDIR $SOFT/presto/src
-RUN wget https://gist.githubusercontent.com/David-McKenna/74958f86a0d23b2322a1c037ef972dc7/raw/618525f55adefe2e57d3830e5e13a2c7d8172a47/0001-Add-I_LOFAR.patch; git apply 0001-Add-I_LOFAR.patch; make -j $BUILD_CORES
+RUN wget https://gist.githubusercontent.com/David-McKenna/74958f86a0d23b2322a1c037ef972dc7/raw/e20452dfa9684cbf5cb897068a2d4b8fcf654e2c/0001-Add-I_LOFAR.patch; git apply 0001-Add-I_LOFAR.patch; make -j $BUILD_CORES
 
 # Generate the wisdom files if needed; will take a few hours. 
 #RUN make makewisdom
