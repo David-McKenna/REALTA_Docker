@@ -28,6 +28,7 @@ RUN wget http://www.atnf.csiro.au/people/pulsar/psrcat/downloads/psrcat_pkg.tar.
 
 # Get Git repos
 RUN git clone https://git.code.sf.net/p/psrchive/code psrchive && \
+	git clone https://github.com/straten/epsic.git && \
 	git clone https://git.code.sf.net/p/psrdada/code psrdada && \
 	git clone https://git.code.sf.net/p/tempo/tempo && \
 	git clone https://git.code.sf.net/p/dspsr/code dspsr && \
@@ -162,6 +163,13 @@ RUN cmake .. && \
 WORKDIR /usr/lib/x86_64-linux-gnu
 RUN ln -s libhdf5_serial.so libhdf5.so && ln -s libhdf5_serial_hl.so libhdf5_hl.so
 
+# Build EPSIC manually because it keeps getting left in a state where it cannot be compiled from the HEAD
+WORKDIR $SOFT/epsic/src
+RUN git reset --hard 68eb0427d592883a73448d5654be4af1c22b576c && \
+	./bootstrap && \
+	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
+	make && make install && \
+	updatedb; ldconfig
 # Build PSRCHIVE
 WORKDIR $SOFT/psrchive
 RUN ./bootstrap && \
