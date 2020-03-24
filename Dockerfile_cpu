@@ -37,9 +37,8 @@ RUN git clone https://git.code.sf.net/p/psrchive/code psrchive && \
 	git clone https://github.com/David-McKenna/sigproc && \
 	git clone https://github.com/scottransom/presto.git && \
 	git clone https://github.com/swig/swig.git && \
-	git clone https://github.com/nextgen-astrodata/DAL.git DAL && \
 	git clone https://github.com/demorest/psrfits_utils.git && \
-	git clone https://github.com/evanocathain/mockHeader.git mockheader
+	git clone https://github.com/David-McKenna/udp2Filterbank
 #RUN git clone https://github.com/SixByNine/psrxml.git
 # Get subversion repo
 #RUN svn checkout https://svn.atnf.csiro.au/difx/libraries/mark5access/trunk/ mark5access
@@ -104,7 +103,7 @@ RUN ./configure --with-pic --enable-shared --enable-static --enable-thread --ena
 
 # Build TEMPO
 WORKDIR $SOFT/tempo
-RUN echo " 3801692.284   -528984.335      5076957.630    1  ILOFAR              n  IL" >> obsys.dat && \
+RUN echo " 3801692.284   -528984.335      5076957.630    1  I-LOFAR              n  IL" >> obsys.dat && \
 	./prepare && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
 	make -j $BUILD_CORES && \
@@ -128,11 +127,6 @@ RUN ./bootstrap && \
 	make -j $BUILD_CORES && \
 	make install
 
-# Build the LOFAR DAL backend
-WORKDIR $SOFT/DAL/build
-RUN cmake .. && \
-	make && \
-	make install
 
 # PSRCHIVE hates the debian name style for hdf5
 WORKDIR /usr/lib/x86_64-linux-gnu
@@ -141,8 +135,6 @@ RUN ln -s libhdf5_serial.so libhdf5.so && ln -s libhdf5_serial_hl.so libhdf5_hl.
 # Build PSRCHIVE
 WORKDIR $SOFT/psrchive
 RUN ./bootstrap && \
-	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu; exit 0
-RUN ./packages/epsic.csh && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu  && \
 	make -j $BUILD_CORES && \
 	make install && \
@@ -184,7 +176,8 @@ RUN ./bootstrap && \
 RUN cp /etc/fftw/wisdomf $SOFT/presto/lib/fftw_wisdom.txt
 
 WORKDIR $SOFT/presto/src
-RUN make -j $BUILD_CORES
+RUN wget https://gist.githubusercontent.com/David-McKenna/74958f86a0d23b2322a1c037ef972dc7/raw/bf0d0315ecdcf05cbf3e43e9a4fd30e80a77c5ca/01-ilofar-presto.patch; git appply 01-ilofar-presto.patch; make -j $BUILD_CORES
+
 # Generate the wisdom files if needed; will take a few hours. 
 #RUN make makewisdom
 
@@ -196,13 +189,12 @@ RUN make -j $BUILD_CORES
 
 # Install PRESTO python libraries
 WORKDIR $SOFT/presto
-RUN python -m pip install . && pip3 install .
-RUN python tests/test_presto_python.py; exit 0
-RUN python3 tests/test_presto_python.py; exit 0
+RUN python -m pip install . && pip3 install .;
+RUN python tests/test_presto_python.py; python3 tests/test_presto_python.py; exit 0
 
-# Build and install mockHeader
-WORKDIR $SOFT/mockheader
-RUN make && cp ./mockHeader /usr/local/bin/
+# Build and install udp2Filterbank/mockHeader
+WORKDIR $SOFT/udp2Filterbank
+RUN make
 
 WORKDIR /home/user
 ENTRYPOINT /bin/bash

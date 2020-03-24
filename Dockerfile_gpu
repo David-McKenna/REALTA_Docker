@@ -17,19 +17,17 @@ RUN python -m pip install --upgrade pip numpy setuptools sphinx==1.7.9 wheel && 
 
 
 WORKDIR /home/soft
-RUN echo "Reinit"
 # Get PSRCAT
 RUN wget http://www.atnf.csiro.au/people/pulsar/psrcat/downloads/psrcat_pkg.tar.gz && \
 	tar -zxvf ./psrcat_pkg.tar.gz && \
-	rm ./psrcat_pkg.tar.gz
-
-# Get Calceph
-RUN wget --no-check-certificate https://www.imcce.fr/content/medias/recherche/equipes/asd/calceph/calceph-3.0.0.tar.gz && \
+	rm ./psrcat_pkg.tar.gz && \
+	wget --no-check-certificate https://www.imcce.fr/content/medias/recherche/equipes/asd/calceph/calceph-3.0.0.tar.gz && \
 	tar -zxvf ./calceph-3.0.0.tar.gz && \ 
 	rm ./calceph-3.0.0.tar.gz
 
 # Get Git repos
 RUN git clone https://git.code.sf.net/p/psrchive/code psrchive && \
+	git clone https://github.com/straten/epsic.git && \
 	git clone https://git.code.sf.net/p/psrdada/code psrdada && \
 	git clone https://git.code.sf.net/p/tempo/tempo && \
 	git clone https://git.code.sf.net/p/dspsr/code dspsr && \
@@ -39,13 +37,12 @@ RUN git clone https://git.code.sf.net/p/psrchive/code psrchive && \
 	git clone https://github.com/David-McKenna/sigproc && \
 	git clone https://github.com/scottransom/presto.git && \
 	git clone https://github.com/swig/swig.git && \
-	git clone https://github.com/nextgen-astrodata/DAL.git DAL && \
 	git clone https://github.com/cbassa/cdmt.git && \
 	git clone https://github.com/NVlabs/cub.git && \
 	git clone https://github.com/demorest/psrfits_utils.git && \
 	git clone https://github.com/GPU-correlators/xGPU.git xgpu && \
 	git clone https://github.com/NVIDIA/cuda-samples.git && \
-	git clone https://github.com/evanocathain/mockHeader.git mockheader
+	git clone https://github.com/David-McKenna/udp2Filterbank
 #RUN git clone https://github.com/SixByNine/psrxml.git
 # Get subversion repo
 #RUN svn checkout https://svn.atnf.csiro.au/difx/libraries/mark5access/trunk/ mark5access
@@ -128,7 +125,7 @@ RUN ./configure --with-pic --enable-shared --enable-static --enable-thread --ena
 
 # Build TEMPO
 WORKDIR $SOFT/tempo
-RUN echo " 3801692.284   -528984.335      5076957.630    1  ILOFAR              n  IL" >> obsys.dat && \
+RUN echo " 3801692.284   -528984.335      5076957.630    1  I-LOFAR              n  IL" >> obsys.dat && \
 	./prepare && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
 	make -j $BUILD_CORES && \
@@ -154,17 +151,19 @@ RUN ./bootstrap && \
 	make install
 ENV FLAGS ""
 
-# Build the LOFAR DAL backend
-WORKDIR $SOFT/DAL/build
-RUN cmake .. && \
-	make && \
-	make install
-
 # PSRCHIVE hates the debian name style for hdf5
 WORKDIR /usr/lib/x86_64-linux-gnu
 RUN ln -s libhdf5_serial.so libhdf5.so && ln -s libhdf5_serial_hl.so libhdf5_hl.so
 
-# Build PSRCHIVE
+# Build EPSIC manually because it keeps getting left in a state where it cannot be compiled from the HEAD
+WORKDIR $SOFT/epsic/src
+RUN git reset --hard 68eb0427d592883a73448d5654be4af1c22b576c && \
+	./bootstrap && \
+	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
+	make && make install && \
+	updatedb; ldconfig
+
+# Build PSRCHIVE -- same story, revert....
 WORKDIR $SOFT/psrchive
 RUN ./bootstrap && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu; exit 0
@@ -196,8 +195,8 @@ RUN sed -i 's/sm_30/sm_70/' ./Makefile.inc && \
 
 # Build DSPSR
 WORKDIR $SOFT/dspsr
-#RUN echo "fits lump sigproc dummy dada lofar_dal puma puma2 spigot wapp mwa ska1" > backends.list
-RUN echo "fits lump sigproc dummy dada lofar_dal mwa ska1" > backends.list && \
+#RUN echo "fits lump sigproc dummy dada puma puma2 spigot wapp mwa ska1" > backends.list
+RUN echo "fits lump sigproc dummy dada mwa ska1" > backends.list && \
 	./bootstrap && \
 	./configure && \
 	make -j $BUILD_CORES && \
@@ -225,7 +224,8 @@ RUN ./bootstrap && \
 RUN cp /etc/fftw/wisdomf $SOFT/presto/lib/fftw_wisdom.txt
 
 WORKDIR $SOFT/presto/src
-RUN make -j $BUILD_CORES
+RUN wget https://gist.githubusercontent.com/David-McKenna/74958f86a0d23b2322a1c037ef972dc7/raw/bf0d0315ecdcf05cbf3e43e9a4fd30e80a77c5ca/01-ilofar-presto.patch; git appply 01-ilofar-presto.patch; make -j $BUILD_CORES
+
 # Generate the wisdom files if needed; will take a few hours. 
 #RUN make makewisdom
 
@@ -237,9 +237,8 @@ RUN make -j $BUILD_CORES
 
 # Install PRESTO python libraries
 WORKDIR $SOFT/presto
-RUN python -m pip install . && pip3 install .
-RUN python tests/test_presto_python.py; exit 0
-RUN python3 tests/test_presto_python.py; exit 0
+RUN python -m pip install . && pip3 install .;
+RUN python tests/test_presto_python.py; python3 tests/test_presto_python.py; exit 0
 
 # Test out CDMT at some point
 WORKDIR $SOFT/cdmt
@@ -248,9 +247,9 @@ RUN sed -i 's/\/opt\/cuda/\/usr\/local\/cuda/' ./makefile && \
 	make && \
 	cp ./cdmt /usr/local/bin/
 
-# Build and install mockHeader
-WORKDIR $SOFT/mockheader
-RUN make && cp ./mockHeader /usr/local/bin/
+# Build and install udp2Filterbank/mockHeader
+WORKDIR $SOFT/udp2Filterbank
+RUN make
 
 WORKDIR /home/user
 ENTRYPOINT /bin/bash
