@@ -1,6 +1,9 @@
 FROM nvidia/cuda:10.2-cudnn7-devel
 SHELL ["/bin/bash", "-c"]
 
+# Should be updated to the value in the makefile at runtime
+ARG BUILD_CORES=8
+
 # Install all required packages available from the disto package manager
 RUN apt-get update && \
 	apt-get install -y software-properties-common apt-utils wget && \
@@ -36,10 +39,12 @@ RUN git clone https://git.code.sf.net/p/psrchive/code psrchive && \
 	git clone https://gist.github.com/799d2873605c189d8261f32b81b3c90c.git /etc/fftw && \
 	wget http://www.atnf.csiro.au/people/pulsar/psrcat/downloads/psrcat_pkg.tar.gz && \
 	wget --no-check-certificate https://www.imcce.fr/content/medias/recherche/equipes/asd/calceph/calceph-3.0.0.tar.gz && \
+	wget https://gist.githubusercontent.com/David-McKenna/334bf337ebf3973fba50a8478e3f2fa7/raw/3051b598ddfe86cb2d99db6149aad65b30fa470e/realta_docker_lock_git_commits.sh && \
 	tar -zxvf ./psrcat_pkg.tar.gz && \
 	tar -zxvf ./calceph-3.0.0.tar.gz && \ 
 	rm ./psrcat_pkg.tar.gz && \
-	rm ./calceph-3.0.0.tar.gz
+	rm ./calceph-3.0.0.tar.gz && \
+	bash ./realta_docker_lock_git_commits.sh # Revert to known good commits
 
 #RUN git clone https://github.com/SixByNine/psrxml.git
 # Get subversion repo
@@ -67,12 +72,6 @@ ENV CUDA_LIBS "-L$CUDA_HOME/lib64 -lcudart $CUDA_LIBS -lstdc++"
 ENV PAKCAGES "/usr/local/cuda"
 
 
-
-# Revert to known good commit hashes
-WORKDIR $SOFT
-RUN updatedb;ldconfig && \
-	wget https://gist.githubusercontent.com/David-McKenna/334bf337ebf3973fba50a8478e3f2fa7/raw/c5856c3608ad667daf08aa208e744a0ec9e0ff34/realta_docker_lock_git_commits.sh; \
-	bash ./realta_docker_lock_git_commits.sh
 
 
 # Clone the REALTA fftw wisdom files as a base (you may want to recompile these for other machines, but l/q will take multiple days to finish.)
@@ -107,7 +106,7 @@ RUN ./makeit
 
 # Build XGPU (GPU Correlator)
 WORKDIR $SOFT/xgpu/src
-RUN make CUDA_ARCH=sm_70 NSTATION=196 -j 48
+RUN make CUDA_ARCH=sm_70 NSTATION=196 -j $BUILD_CORES && make install
 RUN make install
 
 # Build outdated version of SWIG
@@ -194,7 +193,7 @@ RUN psrchive_config > ~/.psrchive.cfg && \
 WORKDIR $SOFT/dedisp
 RUN sed -i 's/sm_30/sm_70/' ./Makefile.inc && \
 	sed -i 's/$(HOME)\/linux_64/\/usr\/local/' ./Makefile.inc && \
-	make -j 48 && \
+	make -j $BUILD_CORES && \
 	make install
 
 # Build DSPSR
@@ -214,7 +213,7 @@ RUN wget https://gist.githubusercontent.com/David-McKenna/dd15cead53a72ccd72b79a
 WORKDIR $SOFT/heimdall
 RUN ./bootstrap && \
 	./configure && \
-	make -j 48 && \
+	make -j $BUILD_CORES && \
 	make install
 
 # Build SIGPROC
