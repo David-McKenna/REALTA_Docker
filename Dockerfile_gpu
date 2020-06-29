@@ -7,16 +7,19 @@ ARG BUILD_CORES=8
 # Install all required packages available from the disto package manager
 RUN apt-get update && \
 	apt-get install -y software-properties-common apt-utils wget && \
-	add-apt-repository -y multiverse
+	add-apt-repository -y multiverse && \
+	add-apt-repository -y ppa:ubuntu-toolchain-r/test
 
 # Handle tzdata dependency asking for input on server location
 ARG DEBIAN_FRONTEND=noninteractive
 # Install remaining packages; may be excessive after removing some of the install targets.
 RUN apt-get update && \
-	apt-get install -y --no-install-recommends autoconf autogen automake autotools-dev bison build-essential cmake csh curl cvs doxygen flex g++ g++-multilib gcc gcc-multilib gfortran gfortran git gnupg-agent gsl-bin hwloc libboost-all-dev libblas-dev libbz2-dev libcfitsio-bin libcfitsio-dev libfftw3-3 libfftw3-bin libfftw3-dev libfftw3-single3 libglib2.0-dev libgsl-dev libgslcblas0 libhdf5-dev libhdf5-m* libhdf5-o* libhdf5-s* libicu-dev liblapack-dev libltdl-dev libpcre3 libpcre3-dev libpng-dev libpnglite-dev librdmacm-dev libtool libtool-bin libx11-dev libxml2 libxml2-dev make mlocate nano pgplot5 pkg-config python-dev python-gnuplot python-pip python-setuptools python-sphinx python-wheel python3-dev python3-pip python3-setuptools python3-wheel qt5-default rdma-core rdmacm-utils tcsh unzip valgrind yodl zstd && \
+	apt-get install -y --no-install-recommends autoconf autogen automake autotools-dev bison build-essential cmake csh curl cvs doxygen flex g++-7 g++-9 g++-multilib gcc-7 gcc-9 gcc-multilib gfortran gfortran git gnupg-agent gsl-bin hwloc libboost-all-dev libblas-dev libbz2-dev libcfitsio-bin libcfitsio-dev libfftw3-3 libfftw3-bin libfftw3-dev libfftw3-single3 libglib2.0-dev libgsl-dev libgslcblas0 libhdf5-dev libhdf5-m* libhdf5-o* libhdf5-s* libicu-dev liblapack-dev libltdl-dev libpcre3 libpcre3-dev libpng-dev libpnglite-dev librdmacm-dev libtool libtool-bin libx11-dev libxml2 libxml2-dev make mlocate nano pgplot5 pkg-config python-dev python-gnuplot python-pip python-setuptools python-sphinx python-wheel python3-dev python3-pip python3-setuptools python3-wheel qt5-default rdma-core rdmacm-utils tcsh unzip valgrind yodl zstd libzstd-dev && \
+	update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-9 && \
+	update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 90 --slave /usr/bin/g++ g++ /usr/bin/g++-7 && \
 	rm -rf /var/lib/apt/lists/* && \
 	python -m pip install --upgrade pip numpy setuptools sphinx==1.7.9 wheel && \
-	pip3 install --upgrade pip numpy setuptools sphinx==1.7.9 wheel git+https://github.com/pravirkr/sigpyproc3
+	pip3 install --upgrade pip numpy setuptools sphinx==1.7.9 wheel git+https://github.com/pravirkr/sigpyproc3 ipython psrqpy
 
 # Download the software we need to build
 WORKDIR /home/soft
@@ -38,6 +41,7 @@ RUN git clone https://git.code.sf.net/p/psrchive/code psrchive && \
 	git clone https://github.com/David-McKenna/mockHeader && \
 	git clone https://github.com/weltevrede/psrsalsa.git && \
 	git clone https://gist.github.com/799d2873605c189d8261f32b81b3c90c.git /etc/fftw && \
+	git clone https://github.com/v-morello/riptide && \
 	wget http://www.atnf.csiro.au/people/pulsar/psrcat/downloads/psrcat_pkg.tar.gz && \
 	wget --no-check-certificate https://www.imcce.fr/content/medias/recherche/equipes/asd/calceph/calceph-3.0.0.tar.gz && \
 	wget https://gist.githubusercontent.com/David-McKenna/334bf337ebf3973fba50a8478e3f2fa7/raw/3051b598ddfe86cb2d99db6149aad65b30fa470e/realta_docker_lock_git_commits.sh && \
@@ -230,8 +234,8 @@ RUN ./bootstrap && \
 RUN cp /etc/fftw/wisdomf $SOFT/presto/lib/fftw_wisdom.txt
 
 WORKDIR $SOFT/presto/src
-RUN wget https://gist.githubusercontent.com/David-McKenna/74958f86a0d23b2322a1c037ef972dc7/raw/618525f55adefe2e57d3830e5e13a2c7d8172a47/0001-Add-I_LOFAR.patch; \
-	git apply 0001-Add-I_LOFAR.patch && \
+RUN wget https://gist.githubusercontent.com/David-McKenna/62d3c9c95d5ac36c839d270036e98e8b/raw/54ce1b0778df59af72a0b5e8b4f867a0c4b5ec8d/0001-Add-support-for-I-LOFAR-telescope-to-PRESTO.patch && \
+	git apply 0001-Add-support-for-I-LOFAR-telescope-to-PRESTO.patch && \
 	make -j $BUILD_CORES
 
 # Generate the wisdom files if needed; will take a few hours. 
@@ -256,17 +260,19 @@ RUN sed -i 's/\/usr\/lib\/cuda/\/usr\/local\/cuda/' ./makefile && \
 	cp ./cdmt_udp /usr/local/bin/; \
 	cp ./cdmt_udp_stream /usr/local/bin/; exit 0;
 
-# Build and install mockHeader
+# Build and install mockHeader, riptide, PSRSalsa, CDMT
 WORKDIR $SOFT/mockHeader
-RUN make && cp ./mockHeader /usr/local/bin/
-
-# Build and install PSRSalsa
-WORKDIR $SOFT/psrsalsa
-RUN sed -i 's/-DGSL_VERSION_NUMBER=115/-DGSL_VERSION_NUMBER=204/g' ./Makefile; \
-	make && \
-	cd ./bin/; \
-	rm README.txt; \
-	cp ./* /usr/local/bin/
+RUN echo "Building mockHeader" && \
+	make && cp ./mockHeader /usr/local/bin/ && \
+	\
+	echo "Building riptide" && \
+	cd $SOFT/riptide && make install && \
+	\
+	echo "Building PSRSalsa" && \
+	cd $SOFT/psrsalsa && sed -i 's/-DGSL_VERSION_NUMBER=115/-DGSL_VERSION_NUMBER=204/g' ./Makefile; make && cd ./bin/; rm README.txt; cp ./* /usr/local/bin/ && \
+	\
+	echo "Buidling CDMT" && \
+	cd $SOFT/cdmt && sed -i 's/\/usr\/lib\/cuda/\/usr\/local\/cuda/' ./makefile && make cdmt cdmt_udp cdmt_udp_stream; cp ./cdmt /usr/local/bin/; cp ./cdmt_udp /usr/local/bin/; cp ./cdmt_udp_stream /usr/local/bin/; exit 0;
 
 WORKDIR /home/user
 ENTRYPOINT /bin/bash
