@@ -1,5 +1,5 @@
 FROM nvidia/cuda:10.2-cudnn7-devel
-SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/bash", "-l", "-c"]
 
 # Should be updated to the value in the makefile at runtime
 ARG BUILD_CORES=8
@@ -8,18 +8,21 @@ ARG BUILD_CORES=8
 RUN apt-get update && \
 	apt-get install -y software-properties-common apt-utils wget && \
 	add-apt-repository -y multiverse && \
-	add-apt-repository -y ppa:ubuntu-toolchain-r/test
+	add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
+	cd /tmp && wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB && apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB && \
+	add-apt-repository -y "deb https://apt.repos.intel.com/oneapi all main"
 
 # Handle tzdata dependency asking for input on server location
 ARG DEBIAN_FRONTEND=noninteractive
 # Install remaining packages; may be excessive after removing some of the install targets.
 RUN apt-get update && \
-	apt-get install -y --no-install-recommends autoconf autogen automake autotools-dev bison build-essential cmake csh curl cvs doxygen flex g++-7 g++-9 g++-multilib gcc-7 gcc-9 gcc-multilib gfortran gfortran git gnupg-agent gsl-bin hwloc libboost-all-dev libblas-dev libbz2-dev libcfitsio-bin libcfitsio-dev libfftw3-3 libfftw3-bin libfftw3-dev libfftw3-single3 libglib2.0-dev libgsl-dev libgslcblas0 libhdf5-dev libhdf5-m* libhdf5-o* libhdf5-s* libicu-dev liblapack-dev libltdl-dev libpcre3 libpcre3-dev libpng-dev libpnglite-dev librdmacm-dev libtool libtool-bin libx11-dev libxml2 libxml2-dev make mlocate nano pgplot5 pkg-config python-dev python-gnuplot python-pip python-setuptools python-sphinx python-wheel python3-dev python3-pip python3-setuptools python3-wheel qt5-default rdma-core rdmacm-utils tcsh unzip valgrind yodl zstd libzstd-dev && \
+	apt-get install -y --no-install-recommends autoconf autogen automake autotools-dev bison cmake csh curl cvs doxygen flex g++-7 g++-9 g++-multilib gcc-7 gcc-9 gcc-multilib gdb gfortran gfortran git gnupg-agent gsl-bin hwloc intel-oneapi-icc intel-oneapi-icc-runtime intel-oneapi-ipp intel-oneapi-ipp-devel intel-oneapi-ifort intel-oneapi-ifort-runtime intel-oneapi-mkl intel-oneapi-mkl-devel intel-oneapi-tbb intel-oneapi-tbb-devel intel-oneapi-openmp intel-oneapi-tbb intel-oneapi-tbb-devel libboost-all-dev libblas-dev libbz2-dev libcfitsio-bin libcfitsio-dev libfftw3-3 libfftw3-bin libfftw3-dev libfftw3-single3 libglib2.0-dev libgsl-dev libgslcblas0 libhdf5-dev libhdf5-m* libhdf5-o* libhdf5-s* libicu-dev liblapack-dev libltdl-dev libpcre3-dev libpng-dev libpnglite-dev librdmacm-dev libtool libtool-bin libx11-dev libxml2-dev mlocate nano pgplot5 pkg-config python3-dev python3-pip python3-setuptools python3-wheel qt5-default rdma-core rdmacm-utils tcsh tth-common unzip valgrind yodl zstd libzstd-dev && \
+	apt-get remove -y python2.7* libpython2* libpython-*&& \
+	update-alternatives --install /usr/bin/python python /usr/bin/python3 60 && \
 	update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-9 && \
 	update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 90 --slave /usr/bin/g++ g++ /usr/bin/g++-7 && \
 	rm -rf /var/lib/apt/lists/* && \
-	python -m pip install --upgrade pip numpy setuptools sphinx==1.7.9 wheel && \
-	pip3 install --upgrade pip numpy setuptools sphinx==1.7.9 wheel git+https://github.com/pravirkr/sigpyproc3 ipython psrqpy
+	pip3 install --upgrade pip numpy setuptools sphinx==1.7.9 wheel git+https://github.com/FRBs/sigpyproc3 ipython psrqpy
 
 # Download the software we need to build
 WORKDIR /home/soft
@@ -36,22 +39,22 @@ RUN git clone https://git.code.sf.net/p/psrchive/code psrchive && \
 	git clone https://github.com/swig/swig.git && \
 	git clone https://github.com/David-McKenna/cdmt.git && \
 	git clone https://github.com/NVlabs/cub.git && \
-	git clone https://github.com/demorest/psrfits_utils.git && \
 	git clone https://github.com/GPU-correlators/xGPU.git xgpu && \
-	git clone https://github.com/David-McKenna/mockHeader && \
+	git clone https://github.com/David-McKenna/udpPacketManager.git && \
 	git clone https://github.com/weltevrede/psrsalsa.git && \
 	git clone https://gist.github.com/799d2873605c189d8261f32b81b3c90c.git /etc/fftw && \
 	git clone https://github.com/v-morello/riptide && \
+	git clone https://github.com/AA-ALERT/psrdada-python && \
+	git clone https://gitlab.com/kmrajwade/iqrm_apollo && \
+	git clone https://github.com/scottransom/psrfits_utils && \
+	git clone https://github.com/SixByNine/psrxml && \
 	wget http://www.atnf.csiro.au/people/pulsar/psrcat/downloads/psrcat_pkg.tar.gz && \
 	wget --no-check-certificate https://www.imcce.fr/content/medias/recherche/equipes/asd/calceph/calceph-3.0.0.tar.gz && \
-	wget https://gist.githubusercontent.com/David-McKenna/334bf337ebf3973fba50a8478e3f2fa7/raw/3051b598ddfe86cb2d99db6149aad65b30fa470e/realta_docker_lock_git_commits.sh && \
 	tar -zxvf ./psrcat_pkg.tar.gz && \
 	tar -zxvf ./calceph-3.0.0.tar.gz && \ 
 	rm ./psrcat_pkg.tar.gz && \
-	rm ./calceph-3.0.0.tar.gz && \
-	bash ./realta_docker_lock_git_commits.sh # Revert to known good commits
+	rm ./calceph-3.0.0.tar.gz
 
-#RUN git clone https://github.com/SixByNine/psrxml.git
 # Get subversion repo
 #RUN svn checkout https://svn.atnf.csiro.au/difx/libraries/mark5access/trunk/ mark5access
 
@@ -70,12 +73,16 @@ ENV CUDA_HOME /usr/local/cuda
 ENV CUDA_TOOLKIT_ROOT_DIR $CUDA_HOME
 ENV LIBRARY_PATH $CUDA_HOME/lib64:/usr/local/lib:$LIBRARY_PATH
 ENV LD_LIBRARY_PATH $CUDA_HOME/lib64:/usr/local/lib:$LD_LIBRARY_PATH
-ENV CFLAGS "-I$CUDA_HOME/include $CFLAGS -lstdc++"
+ENV CFLAGS "-mtune=native -I$CUDA_HOME/include $CFLAGS -lstdc++"
 ENV CPPFLAGS "$CFLAGS $CPP_FLAGS"
 ENV CUDA_CFLAGS "-I$CUDA_HOME/include $CUDA_CFLAGS -lstdc++"
 ENV CUDA_LIBS "-L$CUDA_HOME/lib64 -lcudart $CUDA_LIBS -lstdc++"
 ENV PAKCAGES "/usr/local/cuda"
-
+ENV CC icc
+ENV CXX icpc
+ENV F77 ifort
+ENV FC ifort
+RUN touch ~/.bash_profile && echo "source /opt/intel/oneapi/setvars.sh" >> ~/.bash_profile
 
 
 
@@ -95,51 +102,39 @@ ENV PAKCAGES "/usr/local/cuda"
 
 # Move CUB into the inclides folder
 WORKDIR $SOFT/cub
-RUN cp -r ./cub /usr/local/include/ && updatedb; ldconfig
+RUN cp -r ./cub /usr/local/include/ && updatedb && ldconfig
 
-# Build psrfits_utils
+# Build psrfits_utils, psrcat, XGPU, outdated version of swig, calceph and psrxml
 WORKDIR $SOFT/psrfits_utils
 RUN sed -i 's/-Werror//' ./configure.ac && \
 	./prepare && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
 	make && \
-	make install 
-
-# Build PSRCAT
-WORKDIR $SOFT/psrcat_tar
-RUN ./makeit
-
-# Build XGPU (GPU Correlator)
-WORKDIR $SOFT/xgpu/src
-RUN make CUDA_ARCH=sm_70 NSTATION=196 -j $BUILD_CORES && \
-	make install
-
-# Build outdated version of SWIG
-WORKDIR $SOFT/swig
-# We require an older version of swig for the system to compile properly
-RUN git reset --hard 1c42135 && \
+	make install && \
+	cd $SOFT/psrcat_tar && ./makeit && \
+	cd $SOFT/xgpu/src && make CPPFLAGS="" CFLAGS="-I$CUDA_HOME/include -lstdc++"CUDA_ARCH=sm_70 NSTATION=196 -j $BUILD_CORES && make install && \
+	cd $SOFT/swig && \
+	git reset --hard 1c42135 && \
 	bash ./autogen.sh && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
 	make -j $BUILD_CORES && \
 	make install && \
-	updatedb; ldconfig
-
-# Build Calceph
-WORKDIR $SOFT/calceph-3.0.0
-RUN ./configure --with-pic --enable-shared --enable-static --enable-thread --enable-fortran  && \
+	updatedb && ldconfig && \
+	cd $SOFT/calceph-3.0.0 && \
+	./configure --with-pic --enable-shared --enable-static --enable-thread --enable-fortran  && \
 	make -j $BUILD_CORES && \
 	make install && \
-	updatedb; ldconfig
-
+	updatedb && ldconfig && \
+	cd $SOFT/psrxml && autoreconf --install --warnings=none && ./configure && make -j $BUILD_CORES && make install
 
 # Build TEMPO
 WORKDIR $SOFT/tempo
 RUN echo " 3801692.284   -528984.335      5076957.630    1  ILOFAR              n  IL" >> obsys.dat && \
-	./prepare && \
-	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
-	make -j $BUILD_CORES && \
+	F77=gfortran ./prepare && \
+	F77=gfortran ./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
+	make CFLAGS="$CFLAGS -fPIE" F77=gfortran -j $BUILD_CORES && \
 	make install && \
-	updatedb; ldconfig
+	updatedb && ldconfig
 
 # Build TEMPO2
 WORKDIR $SOFT/tempo2
@@ -149,7 +144,7 @@ RUN echo "Ielfr n" >> ./T2runtime/observatory/aliases && \
 	./configure --with-calceph=/home/soft/calceph-3.0.0 --x-libraries=/usr/lib/x86_64-linux-gnu --prefix=/usr/local && \
 	make -j $BUILD_CORES && make plugins -j $BUILD_CORES && \
 	make install && make plugins-install && \
-	updatedb; ldconfig
+	updatedb && ldconfig
 
 # Build PSRDADA
 WORKDIR $SOFT/psrdada
@@ -164,23 +159,16 @@ ENV FLAGS ""
 WORKDIR /usr/lib/x86_64-linux-gnu
 RUN ln -s libhdf5_serial.so libhdf5.so && ln -s libhdf5_serial_hl.so libhdf5_hl.so
 
-# Build EPSIC manually because it keeps getting left in a state where it cannot be compiled from the HEAD
-WORKDIR $SOFT/epsic/src
-RUN git reset --hard 68eb0427d592883a73448d5654be4af1c22b576c && \
-	./bootstrap && \
-	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
-	make && make install && \
-	updatedb; ldconfig
-
 # Build PSRCHIVE -- same story, revert....
+# --with-ipp-dir=/opt/intel/oneapi/ipp/latest/
 WORKDIR $SOFT/psrchive
 RUN wget https://gist.githubusercontent.com/David-McKenna/6fa0a5df837d9f4072d8bc1daf38966c/raw/9a0cd0f46ef5eb8a9f321c9497c227dcacd96708/0001-Add-support-for-I-LOFAR-telescope-code.patch && \
 	git apply 0001-Add-support-for-I-LOFAR-telescope-code.patch && \
 	./bootstrap && \
-	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu  && \
+	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu --with-psrxml-dir=/usr/local --enable-static LIBS="-lpsrxml -lxml2"  && \
 	make -j $BUILD_CORES && \
 	make install && \
-	updatedb; ldconfig
+	updatedb && ldconfig
 
 # Analyse FFT libraries for PSRCHIVE/DSPSR accelleration (will take a while, or just take the git repo version.)
 #WORKDIR $SOFT/psrchive/Util/fft
@@ -206,28 +194,31 @@ WORKDIR $SOFT/dspsr
 #RUN echo "fits lump sigproc dummy dada puma puma2 spigot wapp mwa ska1" > backends.list
 RUN wget https://gist.githubusercontent.com/David-McKenna/dd15cead53a72ccd72b79a6d946f5d71/raw/9f302f42b9062ed094f3d4e5e2572a5dcd1b1eac/0001-Add-support-for-I-LOFAR-telescope-code.patch && \
 	git apply 0001-Add-support-for-I-LOFAR-telescope-code.patch && \
-	echo "fits lump sigproc dummy dada mwa ska1" > backends.list && \
+	echo "dada dummy fits lump sigproc ska1" > backends.list && \
 	./bootstrap && \
-	./configure && \
+	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu --with-psrxml-dir=/usr/local --enable-static LIBS="-lpsrxml -lxml2" && \
+	grep -rl 'restrict throw()' ./ | xargs sed -i 's/restrict throw()/throw()/g' && \
 	make -j $BUILD_CORES && \
 	make install && \
-	updatedb; ldconfig
+	updatedb && ldconfig
 
 
 # Build Heimdall
 WORKDIR $SOFT/heimdall
-RUN ./bootstrap && \
-	./configure && \
+RUN sed -i 's/cat conftest.i/echo "1_65_1"/' ./config/boost.m4 && \
+	sed -i 's/print command/print(command)/' ./cudalt.py && \
+	./bootstrap && \
+	./configure CPPFLAGS="-I$CUDA_HOME/include" CFLAGS="-I$CUDA_HOME/include" --with-boost=/usr && \
 	make -j $BUILD_CORES && \
 	make install
 
 # Build SIGPROC
 WORKDIR $SOFT/sigproc
-RUN ./bootstrap && \
-	./configure && \
-	make -j $BUILD_CORES && \
+RUN F77=gfortran CC=gcc CXX=g++ ./bootstrap && \
+	F77=gfortran CC=gcc CXX=g++ ./configure && \
+	make F77=gfortran CC=gcc CXX=g++ -j $BUILD_CORES && \
 	make install && \
-	updatedb; ldconfig
+	updatedb && ldconfig
 
 # Build PRESTO
 # PRESTO wisdom seems to just be the fftwf wisdom, so copy it instead
@@ -249,21 +240,14 @@ RUN wget https://gist.githubusercontent.com/David-McKenna/62d3c9c95d5ac36c839d27
 
 # Install PRESTO python libraries
 WORKDIR $SOFT/presto
-RUN python -m pip install . && pip3 install . && \
-	python tests/test_presto_python.py; python3 tests/test_presto_python.py; exit 0
+RUN CC=gcc pip3 install . && \
+	python3 tests/test_presto_python.py
 
-# Build and install CDMT
-WORKDIR $SOFT/cdmt
-RUN sed -i 's/\/usr\/lib\/cuda/\/usr\/local\/cuda/' ./makefile && \
-	make cdmt cdmt_udp cdmt_udp_stream; \
-	cp ./cdmt /usr/local/bin/; \
-	cp ./cdmt_udp /usr/local/bin/; \
-	cp ./cdmt_udp_stream /usr/local/bin/; exit 0;
 
-# Build and install mockHeader, riptide, PSRSalsa, CDMT
-WORKDIR $SOFT/mockHeader
-RUN echo "Building mockHeader" && \
-	make && cp ./mockHeader /usr/local/bin/ && \
+# Build and install udpPacketManager/mockHeader, riptide, PSRSalsa, CDMT, IQRM
+WORKDIR $SOFT/udpPacketManager
+RUN echo "Building udpPacketManager / mockHeader" && \
+	make mockHeader all install && \
 	\
 	echo "Building riptide" && \
 	cd $SOFT/riptide && make install && \
@@ -272,7 +256,15 @@ RUN echo "Building mockHeader" && \
 	cd $SOFT/psrsalsa && sed -i 's/-DGSL_VERSION_NUMBER=115/-DGSL_VERSION_NUMBER=204/g' ./Makefile; make && cd ./bin/; rm README.txt; cp ./* /usr/local/bin/ && \
 	\
 	echo "Buidling CDMT" && \
-	cd $SOFT/cdmt && sed -i 's/\/usr\/lib\/cuda/\/usr\/local\/cuda/' ./makefile && make cdmt cdmt_udp cdmt_udp_stream; cp ./cdmt /usr/local/bin/; cp ./cdmt_udp /usr/local/bin/; cp ./cdmt_udp_stream /usr/local/bin/; exit 0;
+	cd $SOFT/cdmt && ln -s ../udpPacketManager/ ./udpPacketManager/ && make cdmt cdmt_udp CC=icc CXX=icpc; cp ./cdmt /usr/local/bin/; cp ./cdmt_udp /usr/local/bin/;  \
+	\
+	echo "Building IQRM" && \
+	cd $SOFT/iqrm_apollo && mkdir build && cd build && cmake ../ && make -j $BUILD_CORES && cp ./iqrm_apollo/iqrm_apollo_cli /usr/local/bin/
+
+# Build and install PSRDADA-python (currently failing)
+WORKDIR $SOFT/psrdada-python
+RUN	echo "Building PSRDADA-python" && \
+	python3 -m pip install -r ./requirements.txt && make && make test && make install
 
 WORKDIR /home/user
 ENTRYPOINT /bin/bash
