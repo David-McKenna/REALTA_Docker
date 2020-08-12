@@ -262,7 +262,7 @@ RUN echo "Building udpPacketManager / mockHeader" && \
 	\
 	echo "Building IQRM" && \
 	cd $SOFT/iqrm_apollo && mkdir build && cd build && cmake ../ && make -j $BUILD_CORES && cp ./iqrm_apollo/iqrm_apollo_cli /usr/local/bin/
-	\
+	
 	# Riptide build currently failing
 	#echo "Building riptide" && \
 	#cd $SOFT/riptide && make install && \
