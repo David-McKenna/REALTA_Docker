@@ -249,23 +249,25 @@ RUN CC=gcc pip3 install . && \
 
 
 # Build and install udpPacketManager/mockHeader, riptide, PSRSalsa, CDMT, IQRM
+# Comment: I'm compiling udpPacketManager twice here (cdmt clones + compiles on it's own)
 WORKDIR $SOFT/udpPacketManager
 RUN echo "Building udpPacketManager / mockHeader" && \
 	make mockHeader all install && \
-	\
-	echo "Building riptide" && \
-	cd $SOFT/riptide && make install && \
 	\
 	echo "Building PSRSalsa" && \
 	cd $SOFT/psrsalsa && sed -i 's/-DGSL_VERSION_NUMBER=115/-DGSL_VERSION_NUMBER=204/g' ./Makefile; make && cd ./bin/; rm README.txt; cp ./* /usr/local/bin/ && \
 	\
 	echo "Buidling CDMT" && \
-	cd $SOFT/cdmt && ln -s ../udpPacketManager/ ./udpPacketManager/ && make cdmt cdmt_udp CC=icc CXX=icpc; cp ./cdmt /usr/local/bin/; cp ./cdmt_udp /usr/local/bin/;  \
+	cd $SOFT/cdmt && make cdmt_udp CC=icc CXX=icpc && cp ./cdmt_udp /usr/local/bin/ &&  \
 	\
 	echo "Building IQRM" && \
 	cd $SOFT/iqrm_apollo && mkdir build && cd build && cmake ../ && make -j $BUILD_CORES && cp ./iqrm_apollo/iqrm_apollo_cli /usr/local/bin/
+	\
+	# Riptide build currently failing
+	#echo "Building riptide" && \
+	#cd $SOFT/riptide && make install && \
 
-# Build and install PSRDADA-python (currently failing)
+# Build and install PSRDADA-python
 WORKDIR $SOFT/psrdada-python
 RUN	echo "Building PSRDADA-python" && \
 	python3 -m pip install -r ./requirements.txt && make && make test && make install
