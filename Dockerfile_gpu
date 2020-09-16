@@ -25,6 +25,9 @@ RUN apt-get update && \
 	pip3 install --upgrade pip numpy setuptools sphinx==1.7.9 wheel git+https://github.com/FRBs/sigpyproc3 ipython psrqpy
 
 # Download the software we need to build
+ARG BUILD_DATE=2020-01-10
+RUN touch /home/soft/$BUILD_DATE
+
 WORKDIR /home/soft
 RUN git clone https://git.code.sf.net/p/psrchive/code psrchive && \
 	git clone https://github.com/straten/epsic.git && \
