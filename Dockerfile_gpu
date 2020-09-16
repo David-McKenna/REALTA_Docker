@@ -261,7 +261,7 @@ RUN echo "Building udpPacketManager / mockHeader" && \
 	cd $SOFT/psrsalsa && sed -i 's/-DGSL_VERSION_NUMBER=115/-DGSL_VERSION_NUMBER=204/g' ./Makefile; make && cd ./bin/; rm README.txt; cp ./* /usr/local/bin/ && \
 	\
 	echo "Buidling CDMT" && \
-	cd $SOFT/cdmt && make cdmt_udp && cp ./cdmt_udp /usr/local/bin/ &&  \
+	cd $SOFT/cdmt && make cdmt_udp CC=icc && cp ./cdmt_udp /usr/local/bin/ &&  \
 	\
 	echo "Building IQRM" && \
 	cd $SOFT/iqrm_apollo && mkdir build && cd build && cmake ../ && make -j $BUILD_CORES && cp ./iqrm_apollo/iqrm_apollo_cli /usr/local/bin/
