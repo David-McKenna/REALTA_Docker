@@ -194,11 +194,9 @@ RUN sed -i 's/sm_30/sm_70/' ./Makefile.inc && \
 	make install
 
 # Build DSPSR
-# Revert to 2020-01-10 buid release, future copies appear to have signficiant runtime issues (multithreading disabled, reduced exectuion speed in single threaded cases)
 WORKDIR $SOFT/dspsr
 #RUN echo "fits lump sigproc dummy dada puma puma2 spigot wapp mwa ska1" > backends.list
 RUN wget https://gist.githubusercontent.com/David-McKenna/dd15cead53a72ccd72b79a6d946f5d71/raw/9f302f42b9062ed094f3d4e5e2572a5dcd1b1eac/0001-Add-support-for-I-LOFAR-telescope-code.patch && \
-	git reset --hard 22aa48 && \
 	git apply 0001-Add-support-for-I-LOFAR-telescope-code.patch && \
 	echo "dada dummy fits lump sigproc ska1" > backends.list && \
 	./bootstrap && \
@@ -260,7 +258,7 @@ RUN echo "Building udpPacketManager / mockHeader" && \
 	cd $SOFT/psrsalsa && sed -i 's/-DGSL_VERSION_NUMBER=115/-DGSL_VERSION_NUMBER=204/g' ./Makefile; make && cd ./bin/; rm README.txt; cp ./* /usr/local/bin/ && \
 	\
 	echo "Buidling CDMT" && \
-	cd $SOFT/cdmt && make cdmt_udp CC=icc CXX=icpc && cp ./cdmt_udp /usr/local/bin/ &&  \
+	cd $SOFT/cdmt && make cdmt_udp && cp ./cdmt_udp /usr/local/bin/ &&  \
 	\
 	echo "Building IQRM" && \
 	cd $SOFT/iqrm_apollo && mkdir build && cd build && cmake ../ && make -j $BUILD_CORES && cp ./iqrm_apollo/iqrm_apollo_cli /usr/local/bin/
