@@ -25,41 +25,45 @@ RUN apt-get update && \
 	pip3 install --upgrade pip numpy setuptools sphinx==1.7.9 wheel git+https://github.com/FRBs/sigpyproc3 ipython psrqpy
 
 # Download the software we need to build
-ARG BUILD_DATE=2020-01-10
-
-WORKDIR /home/soft
-RUN touch $BUILD_DATE && \
-	git clone https://git.code.sf.net/p/psrchive/code psrchive && \
-	git clone https://github.com/straten/epsic.git && \
-	git clone https://git.code.sf.net/p/psrdada/code psrdada && \
-	git clone https://git.code.sf.net/p/tempo/tempo && \
-	git clone https://git.code.sf.net/p/dspsr/code dspsr && \
-	git clone https://git.code.sf.net/p/heimdall-astro/code heimdall && \
-	git clone https://bitbucket.org/psrsoft/tempo2.git && \
-	git clone https://github.com/ajameson/dedisp.git && \
-	git clone https://github.com/David-McKenna/sigproc && \
-	git clone https://github.com/scottransom/presto.git && \
-	git clone https://github.com/swig/swig.git && \
-	git clone https://github.com/David-McKenna/cdmt.git && \
+# First download relatively slow-to-update objects
 	git clone https://github.com/NVlabs/cub.git && \
-	git clone https://github.com/GPU-correlators/xGPU.git xgpu && \
-	git clone https://github.com/David-McKenna/udpPacketManager.git && \
-	git clone https://github.com/weltevrede/psrsalsa.git && \
-	git clone https://gist.github.com/799d2873605c189d8261f32b81b3c90c.git /etc/fftw && \
-	git clone https://github.com/v-morello/riptide && \
-	git clone https://github.com/AA-ALERT/psrdada-python && \
-	git clone https://gitlab.com/kmrajwade/iqrm_apollo && \
+	git clone https://github.com/ajameson/dedisp.git && \
+	git clone https://git.code.sf.net/p/heimdall-astro/code heimdall && \
 	git clone https://github.com/scottransom/psrfits_utils && \
 	git clone https://github.com/SixByNine/psrxml && \
-	wget http://www.atnf.csiro.au/people/pulsar/psrcat/downloads/psrcat_pkg.tar.gz && \
+	git clone https://github.com/swig/swig.git && \
+	git clone https://github.com/GPU-correlators/xGPU.git xgpu && \
 	wget --no-check-certificate https://www.imcce.fr/content/medias/recherche/equipes/asd/calceph/calceph-3.0.0.tar.gz && \
 	wget http://heasarc.gsfc.nasa.gov/FTP/software/fitsio/c/cfitsio-3.48.tar.gz && \
-	tar -zxvf ./psrcat_pkg.tar.gz && \
 	tar -zxvf ./calceph-3.0.0.tar.gz && \ 
 	tar -zxvf ./cfitsio-3.48.tar.gz && \
-	rm ./psrcat_pkg.tar.gz && \
 	rm ./calceph-3.0.0.tar.gz && \
 	rm ./cfitsio-3.48.tar.gz
+
+# Get the latest version of in-active-development software
+# This arg is updated at build time by the makefile
+ARG BUILD_DATE=2020-01-10
+WORKDIR /home/soft
+RUN touch $BUILD_DATE && \
+	git clone https://github.com/David-McKenna/cdmt.git && \
+	git clone https://git.code.sf.net/p/dspsr/code dspsr && \
+	git clone https://github.com/straten/epsic.git && \
+	git clone https://gist.github.com/799d2873605c189d8261f32b81b3c90c.git /etc/fftw && \
+	git clone https://gitlab.com/kmrajwade/iqrm_apollo && \
+	git clone https://github.com/scottransom/presto.git && \
+	git clone https://git.code.sf.net/p/psrchive/code psrchive && \
+	git clone https://git.code.sf.net/p/psrdada/code psrdada && \
+	git clone https://github.com/AA-ALERT/psrdada-python && \
+	git clone https://github.com/weltevrede/psrsalsa.git && \
+	git clone https://github.com/v-morello/riptide && \
+	git clone https://github.com/David-McKenna/sigproc && \
+	git clone https://git.code.sf.net/p/tempo/tempo && \
+	git clone https://bitbucket.org/psrsoft/tempo2.git && \
+	git clone https://github.com/David-McKenna/udpPacketManager.git && \
+	wget http://www.atnf.csiro.au/people/pulsar/psrcat/downloads/psrcat_pkg.tar.gz && \
+	tar -zxvf ./psrcat_pkg.tar.gz && \
+	rm ./psrcat_pkg.tar.gz
+
 
 # Get subversion repo
 #RUN svn checkout https://svn.atnf.csiro.au/difx/libraries/mark5access/trunk/ mark5access
