@@ -26,12 +26,13 @@ RUN apt-get update && \
 
 # Download the software we need to build
 # First download relatively slow-to-update objects
-RUN git clone https://github.com/NVlabs/cub.git && \
-	git clone https://github.com/ajameson/dedisp.git && \
+WORKDIR /home/soft
+RUN git clone https://github.com/NVlabs/cub.git cub && \
+	git clone https://github.com/ajameson/dedisp.git dedisp && \
 	git clone https://git.code.sf.net/p/heimdall-astro/code heimdall && \
 	git clone https://github.com/scottransom/psrfits_utils && \
 	git clone https://github.com/SixByNine/psrxml && \
-	git clone https://github.com/swig/swig.git && \
+	git clone https://github.com/swig/swig.git swig && \
 	git clone https://github.com/GPU-correlators/xGPU.git xgpu && \
 	wget --no-check-certificate https://www.imcce.fr/content/medias/recherche/equipes/asd/calceph/calceph-3.0.0.tar.gz && \
 	wget http://heasarc.gsfc.nasa.gov/FTP/software/fitsio/c/cfitsio-3.48.tar.gz && \
@@ -43,7 +44,6 @@ RUN git clone https://github.com/NVlabs/cub.git && \
 # Get the latest version of in-active-development software
 # This arg is updated at build time by the makefile
 ARG BUILD_DATE=2020-01-10
-WORKDIR /home/soft
 RUN touch $BUILD_DATE && \
 	git clone https://github.com/David-McKenna/cdmt.git && \
 	git clone https://git.code.sf.net/p/dspsr/code dspsr && \
