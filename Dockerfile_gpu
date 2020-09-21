@@ -220,6 +220,7 @@ RUN sed -i 's/cat conftest.i/echo "1_65_1"/' ./config/boost.m4 && \
 	sed -i 's/print command/print(command)/' ./cudalt.py && \
 	./bootstrap && \
 	./configure CPPFLAGS="-I$CUDA_HOME/include" CFLAGS="-I$CUDA_HOME/include" --with-boost=/usr && \
+	sed -i 's/-Xcompiler \"\$(DEFAULT_INCLUDES) \$(INCLUDES) \$(AM_CPPFLAGS) \$(CPPFLAGS)/-Xcompiler \\\"\$(DEFAULT_INCLUDES) \$(INCLUDES) \$(AM_CPPFLAGS) \$(CPPFLAGS)\\/g' ./Pipeline/Makefile && \
 	make -j $BUILD_CORES && \
 	make install
 
