@@ -24,6 +24,38 @@ RUN apt-get update && \
 	rm -rf /var/lib/apt/lists/* && \
 	pip3 install --upgrade pip numpy setuptools sphinx==1.7.9 wheel git+https://github.com/FRBs/sigpyproc3 ipython psrqpy
 
+# PSRCHIVE hates the debian name style for hdf5
+RUN cd /usr/lib/x86_64-linux-gnu && \
+	ln -s libhdf5_serial.so libhdf5.so && ln -s libhdf5_serial_hl.so libhdf5_hl.so
+
+
+# Setup enviroment variables to access installed software
+# lstdc++ included in c compiles to workaround a bug in PSRDADA's CUDA compile
+ENV SOFT /home/soft
+ENV PGPLOT_DIR /usr/lib/pgplot5
+ENV PSRCAT_FILE $SOFT/psrcat_tar/psrcat.db
+ENV TEMPO $SOFT/tempo
+ENV TEMPO2 $SOFT/tempo2/T2runtime
+ENV PRESTO $SOFT/presto
+ENV PATH $PATH:$SOFT/presto/bin:$SOFT/psrcat_tar/:/usr/local/bin
+ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:/usr/local/include:$SOFT/presto/lib
+ENV CPATH /usr/include/hdf5/serial/:$CPATH
+ENV CUDA_HOME /usr/local/cuda
+ENV CUDA_TOOLKIT_ROOT_DIR $CUDA_HOME
+ENV LIBRARY_PATH $CUDA_HOME/lib64:/usr/local/lib:$LIBRARY_PATH
+ENV LD_LIBRARY_PATH $CUDA_HOME/lib64:/usr/local/lib:$LD_LIBRARY_PATH
+ENV CFLAGS "-mtune=native -I$CUDA_HOME/include $CFLAGS -lstdc++"
+ENV CPPFLAGS "$CFLAGS $CPP_FLAGS"
+ENV CUDA_CFLAGS "-I$CUDA_HOME/include $CUDA_CFLAGS -lstdc++"
+ENV CUDA_LIBS "-L$CUDA_HOME/lib64 -lcudart $CUDA_LIBS -lstdc++"
+ENV PAKCAGES "/usr/local/cuda"
+ENV CC icc
+ENV CXX icpc
+ENV F77 ifort
+ENV FC ifort
+RUN touch ~/.bash_profile && echo "source /opt/intel/oneapi/setvars.sh" >> ~/.bash_profile
+
+
 # Download the software we need to build
 # First download relatively slow-to-update objects
 WORKDIR /home/soft
@@ -65,50 +97,6 @@ RUN touch $BUILD_DATE && \
 	rm ./psrcat_pkg.tar.gz
 
 
-# Get subversion repo
-#RUN svn checkout https://svn.atnf.csiro.au/difx/libraries/mark5access/trunk/ mark5access
-
-# Setup enviroment variables to access installed software
-# lstdc++ included in c compiles to workaround a bug in PSRDADA's CUDA compile
-ENV SOFT /home/soft
-ENV PGPLOT_DIR /usr/lib/pgplot5
-ENV PSRCAT_FILE $SOFT/psrcat_tar/psrcat.db
-ENV TEMPO $SOFT/tempo
-ENV TEMPO2 $SOFT/tempo2/T2runtime
-ENV PRESTO $SOFT/presto
-ENV PATH $PATH:$SOFT/presto/bin:$SOFT/psrcat_tar/:/usr/local/bin
-ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:/usr/local/include:$SOFT/presto/lib
-ENV CPATH /usr/include/hdf5/serial/:$CPATH
-ENV CUDA_HOME /usr/local/cuda
-ENV CUDA_TOOLKIT_ROOT_DIR $CUDA_HOME
-ENV LIBRARY_PATH $CUDA_HOME/lib64:/usr/local/lib:$LIBRARY_PATH
-ENV LD_LIBRARY_PATH $CUDA_HOME/lib64:/usr/local/lib:$LD_LIBRARY_PATH
-ENV CFLAGS "-mtune=native -I$CUDA_HOME/include $CFLAGS -lstdc++"
-ENV CPPFLAGS "$CFLAGS $CPP_FLAGS"
-ENV CUDA_CFLAGS "-I$CUDA_HOME/include $CUDA_CFLAGS -lstdc++"
-ENV CUDA_LIBS "-L$CUDA_HOME/lib64 -lcudart $CUDA_LIBS -lstdc++"
-ENV PAKCAGES "/usr/local/cuda"
-ENV CC icc
-ENV CXX icpc
-ENV F77 ifort
-ENV FC ifort
-RUN touch ~/.bash_profile && echo "source /opt/intel/oneapi/setvars.sh" >> ~/.bash_profile
-
-
-
-# Clone the REALTA fftw wisdom files as a base (you may want to recompile these for other machines, but l/q will take multiple days to finish.)
-# These took ~ 3 days to finish compiling on the REALTA-UCC2 node.
-# Now downloaded above; keep for reference
-#WORKDIR /etc
-#RUN git clone https://gist.github.com/799d2873605c189d8261f32b81b3c90c.git fftw
-
-# Generate FFTW wisdom (performance profiling of system to optimise fftw, only run for final builds, rebuild per machine, not needed for REALTA nodes)
-#WORKDIR /etc/fftw
-#RUN fftw-wisdom -v -c -o /etc/fftw/wisdom
-#RUN fftwf-wisdom -v -c -o /etc/fftw/wisdomf
-#RUN fftwl-wisdom -v -c -o /etc/fftw/wisdoml
-#RUN fftwq-wisdom -v -c -o /etc/fftw/wisdomq
-
 
 # Move CUB into the inclides folder
 WORKDIR $SOFT/cub
@@ -120,10 +108,12 @@ RUN ./configure --prefix=/usr/local --enable-reentrant && make -j $BUILD_CORES &
 	cd $SOFT/psrfits_utils && sed -i 's/-Werror//' ./configure.ac && \
 	./prepare && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
-	make && \
 	make install && \
+	\
 	cd $SOFT/psrcat_tar && ./makeit && \
+	\
 	cd $SOFT/xgpu/src && make CPPFLAGS="" CFLAGS="-I$CUDA_HOME/include -lstdc++"CUDA_ARCH=sm_70 NSTATION=196 -j $BUILD_CORES && make install && \
+	\
 	cd $SOFT/swig && \
 	git reset --hard 1c42135 && \
 	bash ./autogen.sh && \
@@ -131,6 +121,7 @@ RUN ./configure --prefix=/usr/local --enable-reentrant && make -j $BUILD_CORES &
 	make -j $BUILD_CORES && \
 	make install && \
 	updatedb && ldconfig && \
+	\
 	cd $SOFT/calceph-3.0.0 && \
 	./configure --with-pic --enable-shared --enable-static --enable-thread --enable-fortran  && \
 	make -j $BUILD_CORES && \
@@ -138,18 +129,17 @@ RUN ./configure --prefix=/usr/local --enable-reentrant && make -j $BUILD_CORES &
 	updatedb && ldconfig && \
 	cd $SOFT/psrxml && autoreconf --install --warnings=none && ./configure && make -j $BUILD_CORES && make install
 
-# Build TEMPO
+# Build TEMPO & TEMPO2
 WORKDIR $SOFT/tempo
 RUN echo " 3801692.284   -528984.335      5076957.630    1  ILOFAR              n  IL" >> obsys.dat && \
 	F77=gfortran ./prepare && \
 	F77=gfortran ./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu && \
 	make CFLAGS="$CFLAGS -fPIE" F77=gfortran -j $BUILD_CORES && \
 	make install && \
-	updatedb && ldconfig
-
-# Build TEMPO2
-WORKDIR $SOFT/tempo2
-RUN echo "Ielfr n" >> ./T2runtime/observatory/aliases && \
+	updatedb && ldconfig && \
+	\
+	cd $SOFT/tempo2 && \
+	echo "Ielfr n" >> ./T2runtime/observatory/aliases && \
 	printf "# IE613 LOFAR Station\n 3801633.868    -529022.268     5076996.892      IE613LBA            Ielfrlba\n 3801633.868    -529022.268     5076996.892      IE613LBH            Ielfrlbh\n 3801692.284    -528984.335     5076957.630      IE613HBA            Ielfrhba\n 3801692.284    -528984.335     5076957.630      IE613               Ielfr" >> ./T2runtime/observatory/observatories.dat && \
 	./bootstrap && \
 	./configure --with-calceph=/home/soft/calceph-3.0.0 --x-libraries=/usr/lib/x86_64-linux-gnu --prefix=/usr/local && \
@@ -166,11 +156,7 @@ RUN ./bootstrap && \
 	make install
 ENV FLAGS ""
 
-# PSRCHIVE hates the debian name style for hdf5
-WORKDIR /usr/lib/x86_64-linux-gnu
-RUN ln -s libhdf5_serial.so libhdf5.so && ln -s libhdf5_serial_hl.so libhdf5_hl.so
-
-# Build PSRCHIVE -- same story, revert....
+# Build PSRCHIVE
 # --with-ipp-dir=/opt/intel/oneapi/ipp/latest/
 WORKDIR $SOFT/psrchive
 RUN wget https://gist.githubusercontent.com/David-McKenna/6fa0a5df837d9f4072d8bc1daf38966c/raw/9a0cd0f46ef5eb8a9f321c9497c227dcacd96708/0001-Add-support-for-I-LOFAR-telescope-code.patch && \
@@ -179,15 +165,8 @@ RUN wget https://gist.githubusercontent.com/David-McKenna/6fa0a5df837d9f4072d8bc
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu --with-psrxml-dir=/usr/local --enable-static LIBS="-lpsrxml -lxml2"  && \
 	make -j $BUILD_CORES && \
 	make install && \
-	updatedb && ldconfig
-
-# Analyse FFT libraries for PSRCHIVE/DSPSR accelleration (will take a while, or just take the git repo version.)
-#WORKDIR $SOFT/psrchive/Util/fft
-# Workaround sh not containing 'time' anymore
-#RUN sed -i 's/#!\/bin\/sh/#!\/bin\/bash/' ./fft_bench && make bench
-
-# Setup PSRCHIVE config
-RUN psrchive_config > ~/.psrchive.cfg && \
+	updatedb && ldconfig && \
+	psrchive_config > ~/.psrchive.cfg && \
 	sed -i "s/# Predictor::default = polyco/Predictor::default = tempo2/" ~/.psrchive.cfg && \
 	sed -i "s/# Predictor::policy = ephem/Predictor::policy = default/" ~/.psrchive.cfg && \
 	sed -i "s/# WeightedFrequency::round_to_kHz = 1/WeightedFrequency::round_to_kHz = 0/" ~/.psrchive.cfg
@@ -234,29 +213,16 @@ RUN F77=gfortran CC=gcc CXX=g++ ./bootstrap && \
 
 # Build PRESTO
 # PRESTO wisdom seems to just be the fftwf wisdom, so copy it instead
-RUN cp /etc/fftw/wisdomf $SOFT/presto/lib/fftw_wisdom.txt
-
 WORKDIR $SOFT/presto/src
-RUN wget https://gist.githubusercontent.com/David-McKenna/62d3c9c95d5ac36c839d270036e98e8b/raw/54ce1b0778df59af72a0b5e8b4f867a0c4b5ec8d/0001-Add-support-for-I-LOFAR-telescope-to-PRESTO.patch && \
+RUN cp /etc/fftw/wisdomf $SOFT/presto/lib/fftw_wisdom.txt && \
+	wget https://gist.githubusercontent.com/David-McKenna/62d3c9c95d5ac36c839d270036e98e8b/raw/54ce1b0778df59af72a0b5e8b4f867a0c4b5ec8d/0001-Add-support-for-I-LOFAR-telescope-to-PRESTO.patch && \
 	git apply 0001-Add-support-for-I-LOFAR-telescope-to-PRESTO.patch && \
-	make -j $BUILD_CORES
-
-# Generate the wisdom files if needed; will take a few hours. 
-#RUN make makewisdom
-
-
-
-# Download the REALTA wisdom file, left as a backup
-#WORKDIR $SOFT/presto/lib
-#RUN wget https://gist.githubusercontent.com/David-McKenna/431ca5fa769c2a923415b286e498a840/raw/914a493cdbc7adfc6950cbc89908643419cd9491/fftw_wisdom.txt
-
-# Install PRESTO python libraries
-WORKDIR $SOFT/presto
-RUN CC=gcc pip3 install . && \
+	make -j $BUILD_CORES && \
+	cd .. && CC=gcc pip3 install . && \
 	python3 tests/test_presto_python.py
 
 
-# Build and install udpPacketManager/mockHeader, riptide, PSRSalsa, CDMT, IQRM
+# Build and install udpPacketManager/mockHeader, riptide, PSRSalsa, CDMT, IQRM, PSRDADA-python
 # Comment: I'm compiling udpPacketManager twice here (cdmt clones + compiles on it's own)
 WORKDIR $SOFT/udpPacketManager
 RUN echo "Building udpPacketManager / mockHeader" && \
@@ -269,16 +235,13 @@ RUN echo "Building udpPacketManager / mockHeader" && \
 	cd $SOFT/cdmt && make cdmt_udp CC=icc && make cdmt_udp_stokesV CC=icc && cp ./cdmt_ud* /usr/local/bin/ &&  \
 	\
 	echo "Building IQRM" && \
-	cd $SOFT/iqrm_apollo && mkdir build && cd build && cmake ../ && make -j $BUILD_CORES && cp ./iqrm_apollo/iqrm_apollo_cli /usr/local/bin/
-	
-	# Riptide build currently failing
-	#echo "Building riptide" && \
-	#cd $SOFT/riptide && make install && \
-
-# Build and install PSRDADA-python
-WORKDIR $SOFT/psrdada-python
-RUN	echo "Building PSRDADA-python" && \
-	python3 -m pip install -r ./requirements.txt && make && make test && make install
+	cd $SOFT/iqrm_apollo && mkdir build && cd build && cmake ../ && make -j $BUILD_CORES && cp ./iqrm_apollo/iqrm_apollo_cli /usr/local/bin/ && \
+	\	
+	echo "Building riptide" && \
+	cd $SOFT/riptide && make install CC=gcc CXX=g++ && \
+	\
+	echo "Building PSRDADA-python" && \
+	cd $SOFT/psrdada-python && python3 -m pip install -r ./requirements.txt && make && make test && make install
 
 WORKDIR /home/user
 ENTRYPOINT /bin/bash
