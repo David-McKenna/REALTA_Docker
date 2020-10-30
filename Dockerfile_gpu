@@ -53,7 +53,7 @@ ENV CC icc
 ENV CXX icpc
 ENV F77 ifort
 ENV FC ifort
-RUN touch ~/.bash_profile && echo 'source /opt/intel/oneapi/setvars.sh; alias icc="icx"; alias "icpc="icpx"' >> ~/.bash_profile
+RUN touch ~/.bash_profile && echo 'source /opt/intel/oneapi/setvars.sh; alias icc="icx"; alias icpc="icpx"' >> ~/.bash_profile
 
 
 # Download the software we need to build
