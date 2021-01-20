@@ -60,7 +60,8 @@ RUN touch ~/.bash_profile && echo 'unset CMPLR_ROOT; source /opt/intel/oneapi/se
 # First download relatively slow-to-update / older versions of
 # our required stack
 WORKDIR /home/soft
-RUN git clone https://github.com/NVlabs/cub.git cub && \
+RUN git config --global http.postBuffer 1048576000 && \
+	git clone https://github.com/NVlabs/cub.git cub && \
 	git clone https://github.com/ajameson/dedisp.git dedisp && \
 	git clone https://git.code.sf.net/p/heimdall-astro/code heimdall && \
 	git clone https://github.com/scottransom/psrfits_utils && \
@@ -115,7 +116,7 @@ RUN ./configure --prefix=/usr/local --enable-reentrant && make -j $BUILD_CORES &
 	\
 	cd $SOFT/psrcat_tar && ./makeit && \
 	\
-	cd $SOFT/xgpu/src && make CPPFLAGS="" CFLAGS="-I$CUDA_HOME/include -lstdc++"CUDA_ARCH=sm_70 NSTATION=196 -j $BUILD_CORES && make install && \
+	cd $SOFT/xgpu/src && make CPPFLAGS="" CFLAGS="-I$CUDA_HOME/include -lstdc++" CUDA_ARCH=sm_70 NSTATION=196 -j $BUILD_CORES && make install && \
 	\
 	cd $SOFT/swig && \
 	git reset --hard 1c42135 && \
@@ -185,7 +186,7 @@ RUN sed -i 's/sm_30/sm_70/' ./Makefile.inc && \
 # Build DSPSR
 WORKDIR $SOFT/dspsr
 #RUN echo "fits lump sigproc dummy dada puma puma2 spigot wapp mwa ska1" > backends.list
-RUN wget https://gist.githubusercontent.com/David-McKenna/dd15cead53a72ccd72b79a6d946f5d71/raw/9f302f42b9062ed094f3d4e5e2572a5dcd1b1eac/0001-Add-support-for-I-LOFAR-telescope-code.patch && \
+RUN wget https://gist.githubusercontent.com/David-McKenna/dd15cead53a72ccd72b79a6d946f5d71/raw/63fb65a9267b716fff20de9a6532fa7a4a025220/0001-Add-support-for-I-LOFAR-telescope-code.patch && \
 	git apply 0001-Add-support-for-I-LOFAR-telescope-code.patch && \
 	echo "dada dummy fits guppi lump sigproc ska1" > backends.list && \
 	./bootstrap && \
