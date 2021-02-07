@@ -68,8 +68,8 @@ RUN git config --global http.postBuffer 1048576000 && \
 	git clone https://github.com/SixByNine/psrxml && \
 	git clone https://github.com/swig/swig.git swig && \
 	git clone https://github.com/GPU-correlators/xGPU.git xgpu && \
-	wget --no-check-certificate https://www.imcce.fr/content/medias/recherche/equipes/asd/calceph/calceph-3.0.0.tar.gz && \
-	wget http://heasarc.gsfc.nasa.gov/FTP/software/fitsio/c/cfitsio-3.48.tar.gz && \
+	wget --no-verbose --no-check-certificate https://www.imcce.fr/content/medias/recherche/equipes/asd/calceph/calceph-3.0.0.tar.gz && \
+	wget --no-verbose http://heasarc.gsfc.nasa.gov/FTP/software/fitsio/c/cfitsio-3.48.tar.gz && \
 	tar -zxvf ./calceph-3.0.0.tar.gz && \ 
 	tar -zxvf ./cfitsio-3.48.tar.gz && \
 	rm ./calceph-3.0.0.tar.gz && \
@@ -96,7 +96,7 @@ RUN touch $BUILD_DATE && \
 	git clone https://git.code.sf.net/p/tempo/tempo && \
 	git clone https://bitbucket.org/psrsoft/tempo2.git && \
 	git clone https://github.com/David-McKenna/udpPacketManager.git && \
-	wget http://www.atnf.csiro.au/people/pulsar/psrcat/downloads/psrcat_pkg.tar.gz && \
+	wget --no-verbose http://www.atnf.csiro.au/people/pulsar/psrcat/downloads/psrcat_pkg.tar.gz && \
 	tar -zxvf ./psrcat_pkg.tar.gz && \
 	rm ./psrcat_pkg.tar.gz
 
@@ -163,7 +163,8 @@ ENV FLAGS ""
 # Build PSRCHIVE
 # --with-ipp-dir=/opt/intel/oneapi/ipp/latest/
 WORKDIR $SOFT/psrchive
-RUN wget https://gist.githubusercontent.com/David-McKenna/6fa0a5df837d9f4072d8bc1daf38966c/raw/9a0cd0f46ef5eb8a9f321c9497c227dcacd96708/0001-Add-support-for-I-LOFAR-telescope-code.patch && \
+RUN git reset --hard 962395 && \
+	wget https://gist.githubusercontent.com/David-McKenna/6fa0a5df837d9f4072d8bc1daf38966c/raw/9a0cd0f46ef5eb8a9f321c9497c227dcacd96708/0001-Add-support-for-I-LOFAR-telescope-code.patch && \
 	git apply 0001-Add-support-for-I-LOFAR-telescope-code.patch && \
 	./bootstrap && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu --with-psrxml-dir=/usr/local --enable-static LIBS="-lpsrxml -lxml2"  && \
@@ -230,16 +231,19 @@ RUN cp /etc/fftw/wisdomf $SOFT/presto/lib/fftw_wisdom.txt && \
 # Comment: I'm compiling udpPacketManager twice here (cdmt clones + compiles on it's own)
 WORKDIR $SOFT/udpPacketManager
 RUN echo "Building udpPacketManager / mockHeader" && \
-	make mockHeader all install && \
+	\
+	apt-get update && \
+	make mockHeader calibration-prep all install && \
+	rm -rf /var/lib/apt/lists/* && \
 	\
 	echo "Building PSRSalsa" && \
 	cd $SOFT/psrsalsa && sed -i 's/-DGSL_VERSION_NUMBER=115/-DGSL_VERSION_NUMBER=204/g' ./Makefile; make && cd ./bin/; rm README.txt; cp ./* /usr/local/bin/ && \
 	\
 	echo "Buidling CDMT" && \
-	cd $SOFT/cdmt && make cdmt_udp CC=icc && make cdmt_udp_stokesV CC=icc && cp ./cdmt_ud* /usr/local/bin/ &&  \
+	cd $SOFT/cdmt && git pull origin && make cdmt_udp CC=icc && make cdmt_udp_stokesV CC=icc && cp ./cdmt_ud* /usr/local/bin/ &&  \
 	\
-	echo "Building IQRM" && \
-	cd $SOFT/iqrm_apollo && mkdir build && cd build && cmake ../ && make -j $BUILD_CORES && cp ./iqrm_apollo/iqrm_apollo_cli /usr/local/bin/ && \
+	#echo "Building IQRM" && \
+	#cd $SOFT/iqrm_apollo && mkdir build && cd build && cmake ../ && make -j $BUILD_CORES && cp ./iqrm_apollo/iqrm_apollo_cli /usr/local/bin/ && \
 	\	
 	echo "Building riptide" && \
 	cd $SOFT/riptide && make install CC=gcc CXX=g++ && \
