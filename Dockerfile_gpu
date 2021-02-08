@@ -164,7 +164,7 @@ ENV FLAGS ""
 # --with-ipp-dir=/opt/intel/oneapi/ipp/latest/
 WORKDIR $SOFT/psrchive
 RUN git reset --hard 962395 && \
-	wget https://gist.githubusercontent.com/David-McKenna/6fa0a5df837d9f4072d8bc1daf38966c/raw/9a0cd0f46ef5eb8a9f321c9497c227dcacd96708/0001-Add-support-for-I-LOFAR-telescope-code.patch && \
+	wget https://gist.githubusercontent.com/David-McKenna/6fa0a5df837d9f4072d8bc1daf38966c/raw/72b9cf832f21f64233d308cbbfbff49d78d1cf38/0001-Add-support-for-I-LOFAR-telescope-code.patch && \
 	git apply 0001-Add-support-for-I-LOFAR-telescope-code.patch && \
 	./bootstrap && \
 	./configure --enable-shared --x-libraries=/usr/lib/x86_64-linux-gnu --with-psrxml-dir=/usr/local --enable-static LIBS="-lpsrxml -lxml2"  && \
